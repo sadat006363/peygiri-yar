@@ -1,4 +1,3 @@
-// src/stores/itemStore.ts
 import { create } from 'zustand';
 import { Item, ItemStatus } from '@/lib/types';
 import { itemRepository } from '@/lib/storage/repository';
@@ -24,9 +23,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ isLoading: true });
     const allItems = await itemRepository.getAll();
     // مرتب‌سازی بر اساس زمان (جدیدترین اول)
-    const sorted = allItems.sort((a, b) => 
-      (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)
-    );
+    const sorted = allItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     set({
       items: sorted,
       pendingItems: sorted.filter(i => i.status === 'pending'),
@@ -35,15 +32,16 @@ export const useItemStore = create<ItemState>((set, get) => ({
     });
   },
 
-  addItem: async (item) => {
+  addItem: async (item: Omit<Item, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
+    const now = new Date();
     const newItem: Omit<Item, 'id'> = {
       ...item,
-      status: 'pending' as ItemStatus,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now,
     };
     await itemRepository.add(newItem);
-    await get().fetchItems(); // ریفرش لیست
+    await get().fetchItems();
   },
 
   updateItem: async (id, updates) => {

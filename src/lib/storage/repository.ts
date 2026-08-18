@@ -1,5 +1,5 @@
 import { db } from './db';
-import { Item } from '../types';
+import { Item, ItemStatus } from '../types';
 
 export const itemRepository = {
   async add(item: Omit<Item, 'id'>): Promise<number> {
@@ -10,7 +10,8 @@ export const itemRepository = {
     return await db.items.toArray();
   },
 
-  async getByStatus(status: Item['status']): Promise<Item[]> {
+  async getByStatus(status: ItemStatus): Promise<Item[]> {
+    // status از نوع ItemStatus است و مقدار دارد
     return await db.items.where('status').equals(status).toArray();
   },
 

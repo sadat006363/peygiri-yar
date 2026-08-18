@@ -1,4 +1,5 @@
 'use client';
+
 import { useState } from 'react';
 import { useRecorder } from '@/hooks/useRecorder';
 import { useItemStore } from '@/stores/itemStore';
@@ -11,33 +12,56 @@ export const RecordButton = () => {
 
   const handleSend = async () => {
     if (!audioBlob) return;
+
     setIsProcessing(true);
+
     try {
+      // 1. Send audio to Whisper API (transcription)
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
-      const transcribeRes = await fetch('/api/transcribe', { method: 'POST', body: formData });
+
+      const transcribeRes = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+
       const transcribeData = await transcribeRes.json();
-      if (!transcribeRes.ok) throw new Error(transcribeData.error);
+
+      if (!transcribeRes.ok) {
+        throw new Error(transcribeData.error || 'Transcription failed');
+      }
+
       const rawText = transcribeData.text;
 
+      // 2. Send text to GPT for structuring
       const structureRes = await fetch('/api/structure', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ text: rawText }),
       });
-      const structuredData = await structureRes.json();
-      if (!structureRes.ok) throw new Error(structuredData.error);
 
+      const structuredData = await structureRes.json();
+
+      if (!structureRes.ok) {
+        throw new Error(structuredData.error || 'Structuring failed');
+      }
+
+      // 3. Save to IndexedDB (pending status)
       await addItem({
         rawText,
         category: structuredData.category || 'idea',
         title: structuredData.title || 'Untitled',
         description: structuredData.description || rawText,
       });
+
+      // 4. Clean up
       resetAudio();
       alert('✅ Item successfully saved. Please review it in the "Pending Approval" section.');
     } catch (error: any) {
-      alert('❌ Error: ' + error.message);
+      console.error('Error:', error);
+      alert('❌ Error: ' + (error.message || 'Something went wrong'));
     } finally {
       setIsProcessing(false);
     }
@@ -45,6 +69,7 @@ export const RecordButton = () => {
 
   return (
     <div className="flex flex-col items-center gap-4">
+      {/* Record Button */}
       <div className="relative">
         <button
           onClick={isRecording ? stopRecording : startRecording}
@@ -57,21 +82,29 @@ export const RecordButton = () => {
         >
           {isRecording ? '⏹' : '🎙'}
         </button>
+
+        {/* Pulse animation while recording */}
         {isRecording && (
           <div className="absolute -inset-2 rounded-full border-4 border-red-300/50 animate-ping"></div>
         )}
       </div>
 
+      {/* Action Buttons after recording */}
       {!isRecording && audioBlob && (
         <div className="flex gap-3 mt-2">
-          <Button variant="secondary" onClick={resetAudio}>Cancel</Button>
+          <Button variant="secondary" onClick={resetAudio} disabled={isProcessing}>
+            Cancel
+          </Button>
           <Button variant="success" onClick={handleSend} disabled={isProcessing}>
             {isProcessing ? '⏳ Processing...' : '✅ Save'}
           </Button>
         </div>
       )}
 
-      {isRecording && <p className="text-sm text-red-500 font-medium">⚫ Recording... (tap to stop)</p>}
+      {/* Recording status text */}
+      {isRecording && (
+        <p className="text-sm text-red-500 font-medium">⚫ Recording... (tap to stop)</p>
+      )}
     </div>
   );
 };

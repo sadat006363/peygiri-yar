@@ -50,7 +50,8 @@ export const ItemCard = ({ item }: { item: Item }) => {
   const [editTitle, setEditTitle] = useState(item.title);
   const [editDesc, setEditDesc] = useState(item.description);
   const [editPriority, setEditPriority] = useState<Priority>(item.priority);
-  const [editDueDate, setEditDueDate] = useState<string>(item.dueDate || ''); // ✅ تغییر به string
+  // ✅ مقداردهی اولیه: اگر dueDate null باشد، تبدیل به رشته‌ی خالی می‌شود
+  const [editDueDate, setEditDueDate] = useState<string>(item.dueDate || '');
 
   const handleApprove = async () => {
     if (item.id) {
@@ -94,7 +95,8 @@ export const ItemCard = ({ item }: { item: Item }) => {
         title: editTitle,
         description: editDesc,
         priority: editPriority,
-        dueDate: editDueDate || null, // ✅ ارسال null اگر خالی باشد
+        // ✅ اگر editDueDate خالی باشد، null ارسال می‌شود
+        dueDate: editDueDate || null,
       });
       setIsEditing(false);
     }
@@ -193,7 +195,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
         </select>
         <input
           type="date"
-          value={editDueDate} // ✅ فقط string است
+          value={editDueDate} // ✅ editDueDate همیشه string است
           onChange={(e) => setEditDueDate(e.target.value)}
           className="w-full border border-gray-300 rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
         />

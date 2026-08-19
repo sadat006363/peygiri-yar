@@ -15,14 +15,18 @@ export const RecordButton = () => {
   console.log(`📊 وضعیت audioBlob: ${audioBlob ? `${audioBlob.size} بایت` : 'خالی'}`);
   console.log(`📊 وضعیت isProcessing: ${isProcessing}`);
 
-  const handleStart = () => {
-    console.log('🎤 دکمه START کلیک شد.');
-    startRecording();
-  };
+  // ✅ یک تابع واحد برای مدیریت کلیک
+  const handleClick = () => {
+    console.log('🖱️ دکمه کلیک شد.');
+    console.log(`📊 isRecording فعلی: ${isRecording}`);
 
-  const handleStop = () => {
-    console.log('⏹ دکمه STOP کلیک شد.');
-    stopRecording();
+    if (isRecording) {
+      console.log('⏹ درخواست توقف ضبط...');
+      stopRecording();
+    } else {
+      console.log('🎤 درخواست شروع ضبط...');
+      startRecording();
+    }
   };
 
   const handleSend = async () => {
@@ -108,7 +112,7 @@ export const RecordButton = () => {
       {/* Record Button */}
       <div className="relative">
         <button
-          onClick={isRecording ? handleStop : handleStart}
+          onClick={handleClick}  // ✅ فقط یک تابع
           disabled={isProcessing}
           className={`w-24 h-24 rounded-full text-white text-4xl shadow-xl transition-all duration-300 ${
             isRecording

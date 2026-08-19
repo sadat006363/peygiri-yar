@@ -15,18 +15,22 @@ export const RecordButton = () => {
   console.log(`📊 وضعیت audioBlob: ${audioBlob ? `${audioBlob.size} بایت` : 'خالی'}`);
   console.log(`📊 وضعیت isProcessing: ${isProcessing}`);
 
-  // ✅ یک تابع واحد برای مدیریت کلیک
-  const handleClick = () => {
-    console.log('🖱️ دکمه کلیک شد.');
-    console.log(`📊 isRecording فعلی: ${isRecording}`);
+  const handleStart = () => {
+    console.log('🎤 دکمه START کلیک شد.');
+    startRecording();
+    
+    // تایمر خودکار برای توقف بعد از 15 ثانیه (برای تست)
+    setTimeout(() => {
+      if (isRecording) {
+        console.log('⏰ تایمر خودکار: توقف ضبط...');
+        stopRecording();
+      }
+    }, 15000);
+  };
 
-    if (isRecording) {
-      console.log('⏹ درخواست توقف ضبط...');
-      stopRecording();
-    } else {
-      console.log('🎤 درخواست شروع ضبط...');
-      startRecording();
-    }
+  const handleStop = () => {
+    console.log('⏹ دکمه STOP کلیک شد.');
+    stopRecording();
   };
 
   const handleSend = async () => {
@@ -109,24 +113,28 @@ export const RecordButton = () => {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Record Button */}
-      <div className="relative">
+      {/* Record / Stop Buttons */}
+      <div className="flex items-center gap-4">
         <button
-          onClick={handleClick}  // ✅ فقط یک تابع
-          disabled={isProcessing}
-          className={`w-24 h-24 rounded-full text-white text-4xl shadow-xl transition-all duration-300 ${
-            isRecording
-              ? 'bg-gradient-to-r from-red-500 to-pink-500 animate-pulse ring-4 ring-red-300'
-              : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 hover:shadow-2xl'
-          }`}
+          onClick={handleStart}
+          disabled={isProcessing || isRecording}
+          className="w-20 h-20 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-4xl shadow-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isRecording ? '⏹' : '🎙'}
+          🎙
         </button>
 
-        {isRecording && (
-          <div className="absolute -inset-2 rounded-full border-4 border-red-300/50 animate-ping"></div>
-        )}
+        <button
+          onClick={handleStop}
+          disabled={isProcessing || !isRecording}
+          className="w-20 h-20 rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white text-4xl shadow-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse ring-4 ring-red-300"
+        >
+          ⏹
+        </button>
       </div>
+
+      {isRecording && (
+        <p className="text-sm text-red-500 font-medium">⚫ Recording... (use STOP button)</p>
+      )}
 
       {/* Action Buttons after recording */}
       {!isRecording && audioBlob && (
@@ -138,10 +146,6 @@ export const RecordButton = () => {
             {isProcessing ? '⏳ Processing...' : '✅ Save'}
           </Button>
         </div>
-      )}
-
-      {isRecording && (
-        <p className="text-sm text-red-500 font-medium">⚫ Recording... (tap to stop)</p>
       )}
     </div>
   );

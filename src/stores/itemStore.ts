@@ -44,9 +44,10 @@ export const useItemStore = create<ItemState>((set, get) => ({
       status: 'pending',
       createdAt: now,
       updatedAt: now,
-      followUpCondition: item.followUpCondition || null,
-      followUpDate: item.followUpDate || null,
-      project: item.project || null,
+      // استفاده از null به جای undefined برای سازگاری با تایپ
+      followUpCondition: item.followUpCondition ?? null,
+      followUpDate: item.followUpDate ?? null,
+      project: item.project ?? null,
       tags: item.tags || [],
     };
     await itemRepository.add(newItem);

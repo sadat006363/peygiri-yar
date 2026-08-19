@@ -13,9 +13,9 @@ export interface Item {
   dueDate?: string;
   createdAt: Date;
   updatedAt: Date;
-  // جدید
-  followUpCondition?: string;
-  followUpDate?: string;
-  project?: string;
+  // فیلدهای جدید با قابلیت null
+  followUpCondition?: string | null;
+  followUpDate?: string | null;
+  project?: string | null;
   tags?: string[];
 }

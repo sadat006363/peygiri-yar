@@ -104,7 +104,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
     <>
       <Card className="transition-all hover:border-indigo-200">
         <div className="flex flex-col gap-2">
-          {/* برچسب‌ها: دسته + اولویت + وضعیت */}
           <div className="flex flex-wrap justify-between items-start gap-2">
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${categoryColors[item.category]}`}>
               {categoryLabels[item.category] || item.category}
@@ -142,7 +141,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
             </span>
           </div>
 
-          {/* دکمه‌های عملیاتی بر اساس وضعیت */}
           {item.status === 'pending' && (
             <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100">
               <Button variant="success" size="sm" onClick={handleApprove}>✔ Approve</Button>
@@ -195,7 +193,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
         </select>
         <input
           type="date"
-          value={editDueDate}
+          value={editDueDate ?? ''}   // ← اصلاح
           onChange={(e) => setEditDueDate(e.target.value)}
           className="w-full border border-gray-300 rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
         />

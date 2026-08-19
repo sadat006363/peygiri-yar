@@ -25,17 +25,18 @@ export const DailyBriefing = () => {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-    const approved = items.filter(i => i.status === 'approved');
+    // ✅ تغییر: استفاده از active به جای approved
+    const activeItems = items.filter(i => i.status === 'active');
     const pending = items.filter(i => i.status === 'pending');
 
-    const todayList = approved.filter(i => {
+    const todayList = activeItems.filter(i => {
       if (!i.dueDate) return false;
       const due = new Date(i.dueDate);
       due.setHours(0, 0, 0, 0);
       return due.getTime() === today.getTime();
     });
 
-    const tomorrowList = approved.filter(i => {
+    const tomorrowList = activeItems.filter(i => {
       if (!i.dueDate) return false;
       const due = new Date(i.dueDate);
       due.setHours(0, 0, 0, 0);

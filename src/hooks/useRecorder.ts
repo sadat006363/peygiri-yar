@@ -10,7 +10,6 @@ export const useRecorder = () => {
     console.log('🎤 درخواست دسترسی به میکروفون...');
 
     try {
-      // بررسی وجود مرورگر و API مورد نیاز
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         console.error('❌ مرورگر از getUserMedia پشتیبانی نمی‌کند.');
         alert('مرورگر شما از میکروفون پشتیبانی نمی‌کند. لطفاً از مرورگر جدیدتر استفاده کنید.');
@@ -20,7 +19,6 @@ export const useRecorder = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       console.log('✅ دسترسی به میکروفون گرفته شد.');
 
-      // تشخیص فرمت مناسب برای مرورگر
       let options: MediaRecorderOptions = {};
       if (MediaRecorder.isTypeSupported('audio/mp4')) {
         options = { mimeType: 'audio/mp4' };
@@ -57,7 +55,6 @@ export const useRecorder = () => {
         console.log(`📦 حجم کل فایل صوتی: ${blob.size} بایت`);
         setAudioBlob(blob);
 
-        // آزاد کردن میکروفون
         stream.getTracks().forEach(track => {
           track.stop();
           console.log('🎤 یک ترک میکروفون آزاد شد.');
@@ -76,7 +73,6 @@ export const useRecorder = () => {
     } catch (error: any) {
       console.error('❌ خطا در دسترسی به میکروفون:', error);
 
-      // نمایش پیام خطای مناسب به کاربر
       if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
         alert('❌ هیچ میکروفونی پیدا نشد. لطفاً یک میکروفون وصل کنید و دوباره امتحان کنید.');
       } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
@@ -94,15 +90,32 @@ export const useRecorder = () => {
     console.log(`📊 وضعیت فعلی isRecording: ${isRecording}`);
     console.log(`📊 mediaRecorderRef.current: ${mediaRecorderRef.current ? 'وجود دارد' : 'وجود ندارد'}`);
 
-    if (mediaRecorderRef.current && isRecording) {
-      console.log('🛑 در حال توقف MediaRecorder...');
-      mediaRecorderRef.current.stop();
+    if (mediaRecorderRef.current) {
+      console.log(`📊 وضعیت MediaRecorder: ${mediaRecorderRef.current.state}`);
+    }
+
+    try {
+      if (mediaRecorderRef.current && isRecording) {
+        console.log('🛑 در حال توقف MediaRecorder...');
+        mediaRecorderRef.current.stop();
+        setIsRecording(false);
+        console.log('✅ ضبط با موفقیت متوقف شد. isRecording = false');
+      } else if (mediaRecorderRef.current && !isRecording) {
+        console.warn('⚠️ mediaRecorder وجود دارد اما isRecording false است.');
+        console.warn('   شاید قبلاً متوقف شده باشد.');
+        // در این حالت، ما MediaRecorder رو متوقف نمی‌کنیم چون از قبل متوقف شده.
+      } else if (!mediaRecorderRef.current && isRecording) {
+        console.warn('⚠️ isRecording true است اما mediaRecorder وجود ندارد.');
+        console.warn('   وضعیت ناهماهنگ! بازنشانی isRecording...');
+        setIsRecording(false);
+      } else {
+        console.warn('⚠️ هیچ MediaRecorder و ضبط فعالی وجود ندارد.');
+      }
+    } catch (error: any) {
+      console.error('❌ خطا در توقف ضبط:', error);
+      console.error('   پیام خطا:', error.message);
+      // در صورت خطا، isRecording رو بازنشانی کن
       setIsRecording(false);
-      console.log('✅ ضبط با موفقیت متوقف شد. isRecording = false');
-    } else {
-      console.warn('⚠️ ضبط در حال اجرا نیست یا MediaRecorder موجود نیست.');
-      console.warn(`   - isRecording: ${isRecording}`);
-      console.warn(`   - mediaRecorderRef: ${mediaRecorderRef.current ? 'موجود' : 'ناموجود'}`);
     }
   };
 

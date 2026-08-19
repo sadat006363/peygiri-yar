@@ -144,7 +144,7 @@ export const RecordButton = () => {
       }
 
       console.log('📊 دریافت اصلاحات پرکاربرد...');
-      let userCorrections = [];
+      let userCorrections: any[] = [];
       try {
         const memoryRes = await fetch('/api/correction-memory/most-used?limit=20');
         if (memoryRes.ok) {
@@ -152,8 +152,8 @@ export const RecordButton = () => {
           userCorrections = memoryData.data || [];
           console.log(`✅ ${userCorrections.length} اصلاحات پرکاربرد دریافت شد.`);
         }
-      } catch (error) {
-        console.warn('⚠️ خطا در دریافت اصلاحات پرکاربرد:', error);
+      } catch (error: any) {
+        console.warn('⚠️ خطا در دریافت اصلاحات پرکاربرد:', error.message);
       }
 
       console.log('📤 مرحله 2: ارسال متن به /api/correct برای اصلاح...');
@@ -163,7 +163,7 @@ export const RecordButton = () => {
         knownPeople: ['علی رضایی', 'رضا موسوی', 'سارا احمدی'],
         knownProjects: ['PromptYar', 'Zbloue', 'Direct2Chat'],
         knownTerms: ['Whisper', 'Next.js', 'Supabase'],
-        userCorrections: userCorrections.map((c) => ({
+        userCorrections: userCorrections.map((c: any) => ({
           original: c.originalText,
           corrected: c.correctedText,
         })),
@@ -175,7 +175,7 @@ export const RecordButton = () => {
       });
 
       let correctedText = rawText;
-      let correctionChanges = [];
+      let correctionChanges: any[] = [];
       let needsConfirmation = false;
       let confidence = 1.0;
 
@@ -200,7 +200,7 @@ export const RecordButton = () => {
           needsConfirmation = correctData.needsConfirmation !== false;
           
           if (correctionChanges.length > 0) {
-            const totalConfidence = correctionChanges.reduce((sum, c) => sum + (c.confidence || 0.5), 0);
+            const totalConfidence = correctionChanges.reduce((sum: number, c: any) => sum + (c.confidence || 0.5), 0);
             confidence = Math.min(totalConfidence / correctionChanges.length, 1.0);
           }
           
@@ -208,7 +208,7 @@ export const RecordButton = () => {
           console.log(`📊 تعداد اصلاحات: ${correctionChanges.length}`);
           console.log(`📊 اطمینان متوسط: ${confidence.toFixed(2)}`);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.warn('⚠️ خطا در فراخوانی correction API:', error.message);
       }
 
@@ -248,8 +248,8 @@ export const RecordButton = () => {
       console.log('✅ آیتم با موفقیت ذخیره شد.');
       resetAudio();
 
-    } catch (error) {
-      console.error('❌ خطای کلی در handleSend:', error);
+    } catch (error: any) {
+      console.error('❌ خطای کلی در handleSend:', error.message);
       alert('❌ Error: ' + (error.message || 'Something went wrong'));
       resetAudio();
     } finally {

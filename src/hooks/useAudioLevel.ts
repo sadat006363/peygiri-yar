@@ -9,7 +9,6 @@ export const useAudioLevel = (stream: MediaStream | null) => {
 
   useEffect(() => {
     if (!stream) {
-      // پاک کردن منابع وقتی stream وجود ندارد
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;

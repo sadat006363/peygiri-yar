@@ -5,6 +5,7 @@ export const useRecorder = () => {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const isRecordingRef = useRef(false); // ✅ ref جدید
 
   const startRecording = async () => {
     console.log('🎤 درخواست دسترسی به میکروفون...');
@@ -57,13 +58,22 @@ export const useRecorder = () => {
           console.log('🎤 یک ترک میکروفون آزاد شد.');
         });
         console.log('✅ تمام ترک‌های میکروفون آزاد شدند.');
+        
+        // ✅ به‌روزرسانی ref و state
+        isRecordingRef.current = false;
+        setIsRecording(false);
+        console.log('📊 isRecordingRef به false تنظیم شد.');
       };
 
       mediaRecorder.onerror = (event) => {
         console.error('❌ خطا در MediaRecorder:', event);
+        if (mediaRecorderRef.current && isRecordingRef.current) {
+          mediaRecorderRef.current.stop();
+        }
       };
 
       mediaRecorder.start();
+      isRecordingRef.current = true; // ✅ تنظیم ref
       setIsRecording(true);
       console.log('🔴 ضبط شروع شد.');
 
@@ -75,29 +85,25 @@ export const useRecorder = () => {
 
   const stopRecording = () => {
     console.log('⏹ stopRecording فراخوانی شد.');
-    console.log(`📊 isRecording: ${isRecording}`);
-    console.log(`📊 mediaRecorderRef.current: ${mediaRecorderRef.current ? 'موجود' : 'ناموجود'}`);
+    console.log(`📊 isRecording state: ${isRecording}`);
+    console.log(`📊 isRecordingRef: ${isRecordingRef.current}`);
 
     try {
-      if (mediaRecorderRef.current) {
-        console.log(`📊 وضعیت MediaRecorder: ${mediaRecorderRef.current.state}`);
-      }
-
-      if (mediaRecorderRef.current && isRecording) {
+      if (mediaRecorderRef.current && isRecordingRef.current) {
         console.log('🛑 در حال توقف MediaRecorder...');
         mediaRecorderRef.current.stop();
-        setIsRecording(false);
-        console.log('✅ ضبط با موفقیت متوقف شد.');
+        // توجه: onstop تنظیمات ref و state را انجام می‌دهد
       } else {
         console.warn('⚠️ ضبط در حال اجرا نیست یا MediaRecorder موجود نیست.');
-        // اگر isRecording true است ولی mediaRecorder وجود ندارد، بازنشانی کن
-        if (isRecording && !mediaRecorderRef.current) {
-          console.warn('⚠️ وضعیت ناهماهنگ: isRecording=true ولی mediaRecorder وجود ندارد. بازنشانی...');
+        if (isRecordingRef.current && !mediaRecorderRef.current) {
+          console.warn('⚠️ وضعیت ناهماهنگ: isRecordingRef=true ولی mediaRecorder وجود ندارد. بازنشانی...');
+          isRecordingRef.current = false;
           setIsRecording(false);
         }
       }
     } catch (error: any) {
       console.error('❌ خطا در stopRecording:', error);
+      isRecordingRef.current = false;
       setIsRecording(false);
     }
   };
@@ -115,5 +121,6 @@ export const useRecorder = () => {
     startRecording,
     stopRecording,
     resetAudio,
+    isRecordingRef, // ✅ صادر کردن ref برای استفاده در RecordButton
   };
 };

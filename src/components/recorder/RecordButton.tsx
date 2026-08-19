@@ -6,7 +6,7 @@ import { useItemStore } from '@/stores/itemStore';
 import { Button } from '../ui/Button';
 
 export const RecordButton = () => {
-  const { isRecording, audioBlob, startRecording, stopRecording, resetAudio } = useRecorder();
+  const { isRecording, audioBlob, startRecording, stopRecording, resetAudio, isRecordingRef } = useRecorder();
   const [isProcessing, setIsProcessing] = useState(false);
   const { addItem } = useItemStore();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -16,7 +16,6 @@ export const RecordButton = () => {
   console.log(`📊 وضعیت audioBlob: ${audioBlob ? `${audioBlob.size} بایت` : 'خالی'}`);
   console.log(`📊 وضعیت isProcessing: ${isProcessing}`);
 
-  // پاک کردن تایمر هنگام unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -30,10 +29,10 @@ export const RecordButton = () => {
   const handleClick = () => {
     console.log('🖱️ دکمه کلیک شد.');
     console.log(`📊 isRecording فعلی: ${isRecording}`);
+    console.log(`📊 isRecordingRef فعلی: ${isRecordingRef.current}`);
 
-    if (isRecording) {
+    if (isRecording || isRecordingRef.current) {
       console.log('⏹ درخواست توقف ضبط (دستی)...');
-      // لغو تایمر اگر وجود داشته باشد
       if (timerRef.current) {
         console.log('🧹 لغو تایمر خودکار');
         clearTimeout(timerRef.current);
@@ -45,15 +44,17 @@ export const RecordButton = () => {
       console.log('🎤 درخواست شروع ضبط...');
       startRecording();
 
-      // تنظیم تایمر خودکار برای توقف بعد از 15 ثانیه
       console.log('⏰ تنظیم تایمر خودکار برای 15 ثانیه...');
       timerRef.current = setTimeout(() => {
         console.log('⏰ تایمر خودکار: در حال فراخوانی stopRecording...');
         console.log(`📊 isRecording هنگام تایمر: ${isRecording}`);
-        if (isRecording) {
+        console.log(`📊 isRecordingRef هنگام تایمر: ${isRecordingRef.current}`);
+        
+        // ✅ استفاده از ref به جای state
+        if (isRecordingRef.current) {
           stopRecording();
         } else {
-          console.warn('⚠️ تایمر اجرا شد ولی isRecording false است. ضبط قبلاً متوقف شده.');
+          console.warn('⚠️ تایمر اجرا شد ولی isRecordingRef false است. ضبط قبلاً متوقف شده.');
         }
         timerRef.current = null;
       }, 15000);
@@ -140,7 +141,6 @@ export const RecordButton = () => {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Record Button */}
       <div className="relative">
         <button
           onClick={handleClick}
@@ -166,7 +166,6 @@ export const RecordButton = () => {
         </div>
       )}
 
-      {/* Action Buttons after recording */}
       {!isRecording && audioBlob && (
         <div className="flex gap-3 mt-2">
           <Button variant="secondary" onClick={resetAudio} disabled={isProcessing}>

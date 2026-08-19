@@ -12,6 +12,7 @@ export const RecordButton = () => {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const timeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isProcessingRef = useRef(false); // ✅ برای جلوگیری از اجرای هم‌زمان
 
   // پاک کردن تایمرها هنگام unmount
   useEffect(() => {
@@ -36,51 +37,50 @@ export const RecordButton = () => {
     }
   }, [isRecording]);
 
-  // ✅ تابع handleClick اصلاح‌شده با استفاده از isRecordingRef
+  // ✅ پردازش خودکار بعد از توقف ضبط
+  useEffect(() => {
+    // اگر ضبط متوقف شده، فایل صوتی وجود دارد، و در حال پردازش نیستیم
+    if (!isRecording && audioBlob && !isProcessingRef.current) {
+      console.log('🔄 پردازش خودکار شروع شد...');
+      isProcessingRef.current = true;
+      handleSend();
+    }
+  }, [isRecording, audioBlob]);
+
+  // تابع handleClick برای شروع/توقف ضبط
   const handleClick = async () => {
     console.log('🖱️ دکمه کلیک شد.');
     console.log(`📊 isRecording: ${isRecording}`);
     console.log(`📊 isRecordingRef: ${isRecordingRef.current}`);
 
-    // ✅ اگر در حال ضبط است، متوقف کن (با استفاده از ref)
     if (isRecordingRef.current) {
       console.log('⏹ توقف دستی ضبط...');
-
-      // لغو تایمر ایمنی
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-
       stopRecording();
-
-      // بازخورد لمسی
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-
       return;
     }
 
-    // ✅ در غیر این صورت، شروع به ضبط کن
     console.log('🎤 شروع ضبط...');
     await startRecording();
 
-    // ✅ فقط در صورت شروع واقعی ضبط، تایمر دو دقیقه‌ای را فعال کن
     if (isRecordingRef.current) {
-      // جلوگیری از چند تایمر هم‌زمان
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-
       timerRef.current = setTimeout(() => {
         console.log('⏰ توقف خودکار پس از دو دقیقه...');
         if (isRecordingRef.current) {
           stopRecording();
         }
         timerRef.current = null;
-      }, 120000); // ۲ دقیقه
+      }, 120000);
     }
   };
 
@@ -90,11 +90,13 @@ export const RecordButton = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // تابع handleSend (با تغییرات جزئی برای مدیریت isProcessingRef)
   const handleSend = async () => {
-    console.log('📤 دکمه "Save" کلیک شد.');
+    console.log('📤 handleSend فراخوانی شد.');
 
     if (!audioBlob) {
       console.warn('⚠️ audioBlob خالی است.');
+      isProcessingRef.current = false;
       return;
     }
 
@@ -103,6 +105,7 @@ export const RecordButton = () => {
       console.warn('⚠️ حجم فایل صوتی بسیار کم است.');
       alert('❌ No speech detected. Please record a voice message and try again.');
       resetAudio();
+      isProcessingRef.current = false;
       return;
     }
 
@@ -129,6 +132,7 @@ export const RecordButton = () => {
         alert('❌ No clear speech detected. Please speak clearly and try again.');
         resetAudio();
         setIsProcessing(false);
+        isProcessingRef.current = false;
         return;
       }
 
@@ -153,19 +157,23 @@ export const RecordButton = () => {
       });
 
       resetAudio();
-      alert('✅ Item successfully saved. Please review it in the "Pending Approval" section.');
+      console.log('✅ آیتم با موفقیت ذخیره شد.');
+      // پیام موفقیت (اختیاری - می‌توانید حذف کنید)
+      // alert('✅ Item saved. Please review in Pending Approval.');
+
     } catch (error: any) {
       console.error('❌ خطا:', error);
       alert('❌ Error: ' + (error.message || 'Something went wrong'));
+      resetAudio();
     } finally {
       setIsProcessing(false);
+      isProcessingRef.current = false;
     }
   };
 
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative">
-        {/* ✅ دکمه اصلی با z-10 و relative */}
         <button
           type="button"
           onClick={handleClick}
@@ -179,7 +187,6 @@ export const RecordButton = () => {
           {isRecording ? '⏹' : '🎙'}
         </button>
 
-        {/* ✅ لایه انیمیشن با pointer-events-none و aria-hidden */}
         {isRecording && (
           <div
             aria-hidden="true"
@@ -188,7 +195,6 @@ export const RecordButton = () => {
         )}
       </div>
 
-      {/* نمایش وضعیت ضبط و زمان */}
       {isRecording && (
         <div className="text-center">
           <p className="text-sm text-red-500 font-medium">⚫ Recording... (tap to stop)</p>
@@ -198,17 +204,7 @@ export const RecordButton = () => {
         </div>
       )}
 
-      {/* دکمه‌های Cancel و Save بعد از توقف ضبط */}
-      {!isRecording && audioBlob && (
-        <div className="flex gap-3 mt-2">
-          <Button variant="secondary" onClick={resetAudio} disabled={isProcessing}>
-            Cancel
-          </Button>
-          <Button variant="success" onClick={handleSend} disabled={isProcessing}>
-            {isProcessing ? '⏳ Processing...' : '✅ Save'}
-          </Button>
-        </div>
-      )}
+      {/* ❌ دکمه‌های Save و Cancel حذف شدند */}
     </div>
   );
 };

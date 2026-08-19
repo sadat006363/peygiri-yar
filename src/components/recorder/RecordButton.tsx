@@ -43,6 +43,7 @@ export const RecordButton = () => {
       isProcessingRef.current = true;
       handleSend();
     }
+    // وابستگی‌ها: isRecording, audioBlob
   }, [isRecording, audioBlob]);
 
   const handleClick = async () => {
@@ -107,7 +108,10 @@ export const RecordButton = () => {
     setIsProcessing(true);
 
     try {
+      // =====================================================
       // 1. تبدیل صدا به متن با Whisper
+      // =====================================================
+      console.log('📤 مرحله 1: ارسال فایل صوتی به /api/transcribe...');
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
 
@@ -116,13 +120,17 @@ export const RecordButton = () => {
         body: formData,
       });
 
+      console.log(`📥 پاسخ /api/transcribe: status ${transcribeRes.status}`);
+
       if (!transcribeRes.ok) {
         const errorText = await transcribeRes.text();
+        console.error('❌ خطا در transcribe:', errorText);
         throw new Error(errorText || 'Transcription failed');
       }
 
       const transcribeData = await transcribeRes.json();
       const rawText = transcribeData.text;
+      console.log('✅ متن خام از Whisper:', rawText);
 
       if (rawText.trim().length < 2) {
         alert('❌ No clear speech detected. Please speak clearly and try again.');
@@ -132,61 +140,86 @@ export const RecordButton = () => {
         return;
       }
 
-      // 2. اصلاح متن با GPT (مرحله‌ی جدید)
-      console.log('📤 ارسال متن به /api/correct برای اصلاح...');
-      const correctRes = await fetch('/api/correct', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: rawText,
-          // برای شروع، اطلاعات ثابت؛ بعداً از دیتابیس کاربر می‌خوانیم
-          knownPeople: ['علی رضایی', 'رضا موسوی', 'سارا احمدی'],
-          knownProjects: ['PromptYar', 'Zbloue', 'Direct2Chat'],
-          knownTerms: ['Whisper', 'Next.js', 'Supabase'],
-        }),
-      });
+      // =====================================================
+      // 2. اصلاح متن با GPT (Correction)
+      // =====================================================
+      console.log('📤 مرحله 2: ارسال متن به /api/correct برای اصلاح...');
+      const correctionPayload = {
+        text: rawText,
+        // در آینده می‌توان این‌ها را از پروفایل کاربر خواند
+        knownPeople: ['علی رضایی', 'رضا موسوی', 'سارا احمدی'],
+        knownProjects: ['PromptYar', 'Zbloue', 'Direct2Chat'],
+        knownTerms: ['Whisper', 'Next.js', 'Supabase'],
+      };
+      console.log('📦 داده‌های ارسالی به correction:', correctionPayload);
 
       let correctedText = rawText;
-      let correctionChanges = [];
+      let correctionChanges: any[] = [];
       let needsConfirmation = false;
       let confidence = 1.0;
 
-      if (correctRes.ok) {
-        const correctData = await correctRes.json();
-        correctedText = correctData.correctedText || rawText;
-        correctionChanges = correctData.changes || [];
-        needsConfirmation = correctData.needsConfirmation !== false;
-        // محاسبه‌ی میانگین confidence از تغییرات
-        if (correctionChanges.length > 0) {
-          const totalConfidence = correctionChanges.reduce((sum: number, c: any) => sum + (c.confidence || 0.5), 0);
-          confidence = Math.min(totalConfidence / correctionChanges.length, 1.0);
+      try {
+        const correctRes = await fetch('/api/correct', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(correctionPayload),
+        });
+
+        console.log(`📥 پاسخ /api/correct: status ${correctRes.status}`);
+
+        if (!correctRes.ok) {
+          const errorText = await correctRes.text();
+          console.warn('⚠️ خطا در اصلاح متن:', errorText);
+          // ادامه با متن اصلی
+        } else {
+          const correctData = await correctRes.json();
+          console.log('✅ داده‌های اصلاح‌شده:', correctData);
+
+          correctedText = correctData.correctedText || rawText;
+          correctionChanges = correctData.changes || [];
+          needsConfirmation = correctData.needsConfirmation !== false;
+          // محاسبه‌ی میانگین confidence از تغییرات
+          if (correctionChanges.length > 0) {
+            const totalConfidence = correctionChanges.reduce((sum: number, c: any) => sum + (c.confidence || 0.5), 0);
+            confidence = Math.min(totalConfidence / correctionChanges.length, 1.0);
+          }
+          console.log('✅ متن اصلاح‌شده نهایی:', correctedText);
+          console.log(`📊 تعداد اصلاحات: ${correctionChanges.length}`);
+          console.log(`📊 اطمینان متوسط: ${confidence.toFixed(2)}`);
         }
-        console.log('✅ متن اصلاح‌شده:', correctedText);
-        console.log('📊 تعداد اصلاحات:', correctionChanges.length);
-      } else {
-        console.warn('⚠️ خطا در اصلاح متن، ادامه با متن اصلی');
+      } catch (error: any) {
+        console.warn('⚠️ خطا در فراخوانی correction API:', error.message);
+        // ادامه با متن اصلی
       }
 
-      // 3. ساختاردهی با GPT
-      console.log('📤 ارسال متن به /api/structure...');
+      // =====================================================
+      // 3. ساختاردهی با GPT (Structuring)
+      // =====================================================
+      console.log('📤 مرحله 3: ارسال متن به /api/structure...');
       const structureRes = await fetch('/api/structure', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: correctedText }),
       });
 
+      console.log(`📥 پاسخ /api/structure: status ${structureRes.status}`);
+
       if (!structureRes.ok) {
         const errorText = await structureRes.text();
+        console.error('❌ خطا در structure:', errorText);
         throw new Error(errorText || 'Structuring failed');
       }
 
       const structuredData = await structureRes.json();
       console.log('✅ داده ساختاردهی‌شده:', structuredData);
 
-      // 4. ذخیره‌سازی
+      // =====================================================
+      // 4. ذخیره‌سازی در دیتابیس
+      // =====================================================
+      console.log('📤 مرحله 4: ذخیره آیتم در دیتابیس...');
       await addItem({
-        rawText: rawText, // متن اصلی Whisper
-        correctedText: correctedText, // متن اصلاح‌شده
+        rawText: rawText,
+        correctedText: correctedText,
         rawTranscript: rawText,
         correctedTranscript: correctedText,
         correctionStatus: correctionChanges.length > 0 ? 'ai_corrected' : 'none',
@@ -198,18 +231,19 @@ export const RecordButton = () => {
         dueDate: structuredData.dueDate || null,
       });
 
-      resetAudio();
       console.log('✅ آیتم با موفقیت ذخیره شد.');
+      resetAudio();
       // نمایش پیام موفقیت (اختیاری)
       // alert('✅ Item saved. Please review in Pending Approval.');
 
     } catch (error: any) {
-      console.error('❌ خطا:', error);
+      console.error('❌ خطای کلی در handleSend:', error);
       alert('❌ Error: ' + (error.message || 'Something went wrong'));
       resetAudio();
     } finally {
       setIsProcessing(false);
       isProcessingRef.current = false;
+      console.log('✅ پردازش به پایان رسید.');
     }
   };
 

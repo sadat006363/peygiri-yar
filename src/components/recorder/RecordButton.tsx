@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRecorder } from '@/hooks/useRecorder';
 import { useItemStore } from '@/stores/itemStore';
 import { Button } from '../ui/Button';
@@ -9,7 +9,7 @@ export const RecordButton = () => {
   const { isRecording, audioBlob, startRecording, stopRecording, resetAudio } = useRecorder();
   const [isProcessing, setIsProcessing] = useState(false);
   const { addItem } = useItemStore();
-  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   console.log('🔄 RecordButton رندر شد.');
   console.log(`📊 وضعیت isRecording: ${isRecording}`);
@@ -19,9 +19,13 @@ export const RecordButton = () => {
   // پاک کردن تایمر هنگام unmount
   useEffect(() => {
     return () => {
-      if (timer) clearTimeout(timer);
+      if (timerRef.current) {
+        console.log('🧹 پاک کردن تایمر در unmount');
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
     };
-  }, [timer]);
+  }, []);
 
   const handleClick = () => {
     console.log('🖱️ دکمه کلیک شد.');
@@ -29,25 +33,30 @@ export const RecordButton = () => {
 
     if (isRecording) {
       console.log('⏹ درخواست توقف ضبط (دستی)...');
-      if (timer) {
-        clearTimeout(timer);
-        setTimer(null);
+      // لغو تایمر اگر وجود داشته باشد
+      if (timerRef.current) {
+        console.log('🧹 لغو تایمر خودکار');
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
+      console.log('📞 در حال فراخوانی stopRecording از دکمه...');
       stopRecording();
     } else {
       console.log('🎤 درخواست شروع ضبط...');
       startRecording();
 
-      // ⏰ تایمر خودکار برای توقف بعد از 15 ثانیه
-      const newTimer = setTimeout(() => {
-        console.log('⏰ تایمر خودکار: توقف ضبط...');
+      // تنظیم تایمر خودکار برای توقف بعد از 15 ثانیه
+      console.log('⏰ تنظیم تایمر خودکار برای 15 ثانیه...');
+      timerRef.current = setTimeout(() => {
+        console.log('⏰ تایمر خودکار: در حال فراخوانی stopRecording...');
+        console.log(`📊 isRecording هنگام تایمر: ${isRecording}`);
         if (isRecording) {
           stopRecording();
+        } else {
+          console.warn('⚠️ تایمر اجرا شد ولی isRecording false است. ضبط قبلاً متوقف شده.');
         }
-        setTimer(null);
+        timerRef.current = null;
       }, 15000);
-
-      setTimer(newTimer);
     }
   };
 

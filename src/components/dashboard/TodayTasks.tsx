@@ -6,7 +6,7 @@ import { Item } from '@/lib/types';
 import { Card } from '../ui/Card';
 
 export const TodayTasks = () => {
-  const { items, fetchItems, isLoading } = useItemStore();
+  const { activeItems, fetchItems, isLoading } = useItemStore();
   const [todayItems, setTodayItems] = useState<Item[]>([]);
   const [weekItems, setWeekItems] = useState<Item[]>([]);
 
@@ -15,23 +15,21 @@ export const TodayTasks = () => {
   }, []);
 
   useEffect(() => {
-    if (items.length === 0) return;
+    if (activeItems.length === 0) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const weekLater = new Date(today);
     weekLater.setDate(today.getDate() + 7);
 
-    const approved = items.filter(i => i.status === 'approved');
-
-    const todayList = approved.filter(i => {
+    const todayList = activeItems.filter(i => {
       if (!i.dueDate) return false;
       const due = new Date(i.dueDate);
       due.setHours(0, 0, 0, 0);
       return due.getTime() === today.getTime();
     });
 
-    const weekList = approved.filter(i => {
+    const weekList = activeItems.filter(i => {
       if (!i.dueDate) return false;
       const due = new Date(i.dueDate);
       due.setHours(0, 0, 0, 0);
@@ -40,14 +38,14 @@ export const TodayTasks = () => {
 
     setTodayItems(todayList);
     setWeekItems(weekList);
-  }, [items]);
+  }, [activeItems]);
 
   if (isLoading) return <p className="text-gray-400 text-center py-4">Loading...</p>;
 
   if (todayItems.length === 0 && weekItems.length === 0) {
     return (
       <Card className="bg-gray-50 border-dashed">
-        <p className="text-gray-400 text-center py-4">📭 No upcoming tasks for today or this week.</p>
+        <p className="text-gray-400 text-center py-4">📭 No active tasks for today or this week.</p>
       </Card>
     );
   }

@@ -6,7 +6,9 @@ interface ItemState {
   items: Item[];
   isLoading: boolean;
   pendingItems: Item[];
-  approvedItems: Item[];
+  activeItems: Item[];
+  completedItems: Item[];
+  rejectedItems: Item[];
   fetchItems: () => Promise<void>;
   addItem: (item: Omit<Item, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateItem: (id: number, updates: Partial<Item>) => Promise<void>;
@@ -17,17 +19,20 @@ export const useItemStore = create<ItemState>((set, get) => ({
   items: [],
   isLoading: false,
   pendingItems: [],
-  approvedItems: [],
+  activeItems: [],
+  completedItems: [],
+  rejectedItems: [],
 
   fetchItems: async () => {
     set({ isLoading: true });
     const allItems = await itemRepository.getAll();
-    // مرتب‌سازی بر اساس زمان (جدیدترین اول)
     const sorted = allItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     set({
       items: sorted,
       pendingItems: sorted.filter(i => i.status === 'pending'),
-      approvedItems: sorted.filter(i => i.status === 'approved' || i.status === 'rejected'),
+      activeItems: sorted.filter(i => i.status === 'active'),
+      completedItems: sorted.filter(i => i.status === 'completed'),
+      rejectedItems: sorted.filter(i => i.status === 'rejected'),
       isLoading: false,
     });
   },
@@ -39,6 +44,10 @@ export const useItemStore = create<ItemState>((set, get) => ({
       status: 'pending',
       createdAt: now,
       updatedAt: now,
+      followUpCondition: item.followUpCondition || null,
+      followUpDate: item.followUpDate || null,
+      project: item.project || null,
+      tags: item.tags || [],
     };
     await itemRepository.add(newItem);
     await get().fetchItems();

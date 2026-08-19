@@ -1,5 +1,5 @@
 export type Category = 'customer' | 'task' | 'cost' | 'idea';
-export type ItemStatus = 'pending' | 'approved' | 'rejected';
+export type ItemStatus = 'pending' | 'active' | 'completed' | 'rejected';
 export type Priority = 'high' | 'medium' | 'low';
 
 export interface Item {
@@ -9,8 +9,13 @@ export interface Item {
   title: string;
   description: string;
   status: ItemStatus;
-  priority: Priority;          // ✅ جدید
-  dueDate?: string;            // ✅ جدید (ISO format)
+  priority: Priority;
+  dueDate?: string;
   createdAt: Date;
   updatedAt: Date;
+  // جدید
+  followUpCondition?: string;
+  followUpDate?: string;
+  project?: string;
+  tags?: string[];
 }

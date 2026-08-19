@@ -31,55 +31,72 @@ const priorityLabels: Record<Priority, string> = {
   low: '🔵 Low',
 };
 
+const statusLabels: Record<string, string> = {
+  pending: '⏳ Pending',
+  active: '✅ Active',
+  completed: '✔ Completed',
+  rejected: '✖ Rejected',
+};
+const statusColors: Record<string, string> = {
+  pending: 'bg-gray-100 text-gray-700',
+  active: 'bg-green-100 text-green-700',
+  completed: 'bg-blue-100 text-blue-700',
+  rejected: 'bg-red-100 text-red-700',
+};
+
 export const ItemCard = ({ item }: { item: Item }) => {
   const { updateItem, deleteItem } = useItemStore();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(item.title);
   const [editDesc, setEditDesc] = useState(item.description);
+  const [editPriority, setEditPriority] = useState<Priority>(item.priority);
+  const [editDueDate, setEditDueDate] = useState(item.dueDate || '');
 
   const handleApprove = async () => {
     if (item.id) {
-      await updateItem(item.id, { status: 'approved' });
-      // ✅ برنامه‌ریزی نوتیفیکیشن (گام ۳)
-      if (item.dueDate) {
-        scheduleNotification(item);
-      }
+      await updateItem(item.id, { status: 'active' });
     }
   };
+
   const handleReject = async () => {
-    if (item.id) await updateItem(item.id, { status: 'rejected' });
+    if (item.id) {
+      await updateItem(item.id, { status: 'rejected' });
+    }
   };
+
+  const handleComplete = async () => {
+    if (item.id) {
+      await updateItem(item.id, { status: 'completed' });
+    }
+  };
+
+  const handleSnooze = async () => {
+    if (item.id) {
+      const currentDue = item.dueDate ? new Date(item.dueDate) : new Date();
+      currentDue.setDate(currentDue.getDate() + 1);
+      await updateItem(item.id, {
+        dueDate: currentDue.toISOString().split('T')[0],
+        updatedAt: new Date(),
+      });
+      alert('⏰ Item snoozed for one day.');
+    }
+  };
+
   const handleDelete = async () => {
     if (item.id && confirm('Are you sure you want to delete this item?')) {
       await deleteItem(item.id);
     }
   };
+
   const handleSaveEdit = async () => {
     if (item.id) {
-      await updateItem(item.id, { title: editTitle, description: editDesc });
+      await updateItem(item.id, {
+        title: editTitle,
+        description: editDesc,
+        priority: editPriority,
+        dueDate: editDueDate || null,
+      });
       setIsEditing(false);
-    }
-  };
-
-  // ✅ تابع برنامه‌ریزی نوتیفیکیشن (گام ۳)
-  const scheduleNotification = (item: Item) => {
-    if (!item.dueDate) return;
-    const due = new Date(item.dueDate);
-    const now = new Date();
-    const oneDayBefore = new Date(due);
-    oneDayBefore.setDate(due.getDate() - 1);
-
-    const timeUntilNotify = oneDayBefore.getTime() - now.getTime();
-    if (timeUntilNotify > 0) {
-      setTimeout(() => {
-        if (Notification.permission === 'granted') {
-          new Notification('⏰ پیگیری‌یار: یادآوری', {
-            body: `📌 ${item.title}\n📅 موعد: ${item.dueDate}`,
-            icon: '/icon-192.png',
-          });
-        }
-      }, timeUntilNotify);
-      console.log(`✅ نوتیفیکیشن برای ${item.dueDate} برنامه‌ریزی شد.`);
     }
   };
 
@@ -87,7 +104,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
     <>
       <Card className="transition-all hover:border-indigo-200">
         <div className="flex flex-col gap-2">
-          {/* برچسب‌ها: دسته + اولویت */}
+          {/* برچسب‌ها: دسته + اولویت + وضعیت */}
           <div className="flex flex-wrap justify-between items-start gap-2">
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${categoryColors[item.category]}`}>
               {categoryLabels[item.category] || item.category}
@@ -95,21 +112,28 @@ export const ItemCard = ({ item }: { item: Item }) => {
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${priorityColors[item.priority]}`}>
               {priorityLabels[item.priority]}
             </span>
-            {item.status !== 'pending' && (
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${item.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {item.status === 'approved' ? '✔ Approved' : '✖ Rejected'}
-              </span>
-            )}
+            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColors[item.status]}`}>
+              {statusLabels[item.status] || item.status}
+            </span>
           </div>
 
           <h4 className="font-bold text-gray-800 text-lg">{item.title}</h4>
           <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
 
-          {/* تاریخ سررسید */}
           {item.dueDate && (
             <div className="text-xs text-gray-500">
               📅 Due: {new Date(item.dueDate).toLocaleDateString('en-US')}
             </div>
+          )}
+
+          {item.project && (
+            <div className="text-xs text-gray-500">📁 Project: {item.project}</div>
+          )}
+          {item.tags && item.tags.length > 0 && (
+            <div className="text-xs text-gray-500">🏷️ Tags: {item.tags.join(', ')}</div>
+          )}
+          {item.followUpCondition && (
+            <div className="text-xs text-orange-600">🔄 Follow-up: {item.followUpCondition}</div>
           )}
 
           <div className="flex justify-between items-center mt-1">
@@ -118,6 +142,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
             </span>
           </div>
 
+          {/* دکمه‌های عملیاتی بر اساس وضعیت */}
           {item.status === 'pending' && (
             <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100">
               <Button variant="success" size="sm" onClick={handleApprove}>✔ Approve</Button>
@@ -125,9 +150,19 @@ export const ItemCard = ({ item }: { item: Item }) => {
               <Button variant="secondary" size="sm" onClick={() => setIsEditing(true)}>✎ Edit</Button>
             </div>
           )}
-          {(item.status === 'approved' || item.status === 'rejected') && (
-            <div className="mt-2 pt-2 border-t border-gray-100">
-              <Button variant="secondary" size="sm" onClick={handleDelete}>🗑 Delete</Button>
+
+          {item.status === 'active' && (
+            <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100">
+              <Button variant="success" size="sm" onClick={handleComplete}>✅ Complete</Button>
+              <Button variant="secondary" size="sm" onClick={handleSnooze}>⏰ Snooze (+1d)</Button>
+              <Button variant="secondary" size="sm" onClick={() => setIsEditing(true)}>✎ Edit</Button>
+              <Button variant="danger" size="sm" onClick={handleDelete}>🗑 Delete</Button>
+            </div>
+          )}
+
+          {(item.status === 'completed' || item.status === 'rejected') && (
+            <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100">
+              <Button variant="danger" size="sm" onClick={handleDelete}>🗑 Delete</Button>
             </div>
           )}
         </div>
@@ -135,8 +170,35 @@ export const ItemCard = ({ item }: { item: Item }) => {
 
       <Modal isOpen={isEditing} onClose={() => setIsEditing(false)}>
         <h3 className="text-xl font-bold mb-4 text-gray-800">✎ Edit Item</h3>
-        <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 mb-3" placeholder="Title" />
-        <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 mb-4" rows={3} placeholder="Description" />
+        <input
+          type="text"
+          value={editTitle}
+          onChange={(e) => setEditTitle(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          placeholder="Title"
+        />
+        <textarea
+          value={editDesc}
+          onChange={(e) => setEditDesc(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          rows={3}
+          placeholder="Description"
+        />
+        <select
+          value={editPriority}
+          onChange={(e) => setEditPriority(e.target.value as Priority)}
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+        >
+          <option value="high">🔴 High</option>
+          <option value="medium">🟡 Medium</option>
+          <option value="low">🔵 Low</option>
+        </select>
+        <input
+          type="date"
+          value={editDueDate}
+          onChange={(e) => setEditDueDate(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+        />
         <div className="flex gap-3">
           <Button variant="primary" onClick={handleSaveEdit}>💾 Save</Button>
           <Button variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>

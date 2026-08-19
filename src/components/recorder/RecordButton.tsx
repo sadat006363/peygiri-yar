@@ -13,7 +13,6 @@ export const RecordButton = () => {
   const [recordingTime, setRecordingTime] = useState(0);
   const timeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // پاک کردن تایمرها هنگام unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -21,7 +20,6 @@ export const RecordButton = () => {
     };
   }, []);
 
-  // مدیریت تایمر زمان ضبط
   useEffect(() => {
     if (isRecording) {
       setRecordingTime(0);
@@ -48,21 +46,20 @@ export const RecordButton = () => {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-      console.log('📞 در حال فراخوانی stopRecording از دکمه...');
       stopRecording();
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
     } else {
       console.log('🎤 درخواست شروع ضبط...');
       startRecording();
-
-      // ⏰ تایمر ایمنی ۲ دقیقه‌ای (۱۲۰ ثانیه)
-      console.log('⏰ تنظیم تایمر ایمنی برای 120 ثانیه...');
       timerRef.current = setTimeout(() => {
         console.log('⏰ تایمر ایمنی: در حال فراخوانی stopRecording...');
         if (isRecordingRef.current) {
           stopRecording();
         }
         timerRef.current = null;
-      }, 120000); // ۲ دقیقه
+      }, 120000);
     }
   };
 
@@ -77,7 +74,15 @@ export const RecordButton = () => {
     console.log(`📊 audioBlob: ${audioBlob ? `${audioBlob.size} بایت` : 'خالی'}`);
 
     if (!audioBlob) {
-      console.warn('⚠️ audioBlob خالی است، ادامه نمی‌دهیم.');
+      console.warn('⚠️ audioBlob خالی است.');
+      return;
+    }
+
+    // ✅ بررسی حجم فایل - اگر کمتر از ۵۰۰۰ بایت باشد، یعنی صدایی ضبط نشده
+    if (audioBlob.size < 5000) {
+      console.warn('⚠️ حجم فایل صوتی بسیار کم است. احتمالاً صدایی ضبط نشده.');
+      alert('❌ No speech detected. Please record a voice message and try again.');
+      resetAudio();
       return;
     }
 
@@ -106,6 +111,15 @@ export const RecordButton = () => {
       console.log('✅ متن تبدیل‌شده:', transcribeData.text);
 
       const rawText = transcribeData.text;
+
+      // ✅ اگر متن تبدیل‌شده خیلی کوتاه یا بیمعنی بود، خطا بده
+      if (rawText.trim().length < 2) {
+        console.warn('⚠️ متن تبدیل‌شده بسیار کوتاه است.');
+        alert('❌ No clear speech detected. Please speak clearly and try again.');
+        resetAudio();
+        setIsProcessing(false);
+        return;
+      }
 
       console.log('📤 ارسال متن به /api/structure...');
       const structureRes = await fetch('/api/structure', {

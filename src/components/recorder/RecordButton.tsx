@@ -15,19 +15,14 @@ export const RecordButton = () => {
   console.log(`📊 وضعیت audioBlob: ${audioBlob ? `${audioBlob.size} بایت` : 'خالی'}`);
   console.log(`📊 وضعیت isProcessing: ${isProcessing}`);
 
-  const handleButtonClick = () => {
-    console.log('🖱️ دکمه ضبط کلیک شد.');
-    console.log(`📊 isRecording قبل از کلیک: ${isRecording}`);
+  const handleStart = () => {
+    console.log('🎤 دکمه START کلیک شد.');
+    startRecording();
+  };
 
-    if (isRecording) {
-      console.log('⏹ درخواست توقف ضبط از دکمه...');
-      stopRecording();
-    } else {
-      console.log('🎤 درخواست شروع ضبط از دکمه...');
-      startRecording();
-    }
-
-    console.log(`📊 isRecording بعد از کلیک: ${isRecording}`);
+  const handleStop = () => {
+    console.log('⏹ دکمه STOP کلیک شد.');
+    stopRecording();
   };
 
   const handleSend = async () => {
@@ -43,7 +38,6 @@ export const RecordButton = () => {
     console.log('⏳ isProcessing = true');
 
     try {
-      // 1. ارسال به API تبدیل صدا
       console.log('📤 ارسال فایل صوتی به /api/transcribe...');
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
@@ -66,7 +60,6 @@ export const RecordButton = () => {
 
       const rawText = transcribeData.text;
 
-      // 2. ارسال به API ساختاردهی
       console.log('📤 ارسال متن به /api/structure...');
       const structureRes = await fetch('/api/structure', {
         method: 'POST',
@@ -87,7 +80,6 @@ export const RecordButton = () => {
       const structuredData = await structureRes.json();
       console.log('✅ داده ساختاردهی‌شده:', structuredData);
 
-      // 3. ذخیره در دیتابیس
       console.log('💾 ذخیره آیتم در دیتابیس...');
       await addItem({
         rawText,
@@ -97,8 +89,6 @@ export const RecordButton = () => {
       });
 
       console.log('✅ آیتم با موفقیت ذخیره شد.');
-
-      // 4. پاک کردن فایل صوتی
       resetAudio();
       console.log('🔄 فایل صوتی پاک شد.');
 
@@ -118,7 +108,7 @@ export const RecordButton = () => {
       {/* Record Button */}
       <div className="relative">
         <button
-          onClick={handleButtonClick}
+          onClick={isRecording ? handleStop : handleStart}
           disabled={isProcessing}
           className={`w-24 h-24 rounded-full text-white text-4xl shadow-xl transition-all duration-300 ${
             isRecording
@@ -129,7 +119,6 @@ export const RecordButton = () => {
           {isRecording ? '⏹' : '🎙'}
         </button>
 
-        {/* Pulse animation while recording */}
         {isRecording && (
           <div className="absolute -inset-2 rounded-full border-4 border-red-300/50 animate-ping"></div>
         )}
@@ -147,7 +136,6 @@ export const RecordButton = () => {
         </div>
       )}
 
-      {/* Recording status text */}
       {isRecording && (
         <p className="text-sm text-red-500 font-medium">⚫ Recording... (tap to stop)</p>
       )}

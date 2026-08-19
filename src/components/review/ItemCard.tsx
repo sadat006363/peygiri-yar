@@ -50,7 +50,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
   const [editTitle, setEditTitle] = useState(item.title);
   const [editDesc, setEditDesc] = useState(item.description);
   const [editPriority, setEditPriority] = useState<Priority>(item.priority);
-  // ✅ تغییر: مقداردهی اولیه با ?? برای جلوگیری از null
+  // ✅ تبدیل null به رشته‌ی خالی برای input
   const [editDueDate, setEditDueDate] = useState<string>(item.dueDate ?? '');
 
   const handleApprove = async () => {
@@ -121,6 +121,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
           <h4 className="font-bold text-gray-800 text-lg">{item.title}</h4>
           <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
 
+          {/* ✅ نمایش dueDate با ?? undefined */}
           {item.dueDate && (
             <div className="text-xs text-gray-500">
               📅 Due: {new Date(item.dueDate).toLocaleDateString('en-US')}
@@ -193,9 +194,10 @@ export const ItemCard = ({ item }: { item: Item }) => {
           <option value="medium">🟡 Medium</option>
           <option value="low">🔵 Low</option>
         </select>
+        {/* ✅ استفاده از ?? '' برای input date */}
         <input
           type="date"
-          value={editDueDate}   // ✅ editDueDate همیشه string است
+          value={editDueDate}
           onChange={(e) => setEditDueDate(e.target.value)}
           className="w-full border border-gray-300 rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
         />

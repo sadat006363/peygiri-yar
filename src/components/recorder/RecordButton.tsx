@@ -10,38 +10,64 @@ export const RecordButton = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { addItem } = useItemStore();
 
+  console.log('🔄 RecordButton رندر شد.');
+  console.log(`📊 وضعیت isRecording: ${isRecording}`);
+  console.log(`📊 وضعیت audioBlob: ${audioBlob ? `${audioBlob.size} بایت` : 'خالی'}`);
+  console.log(`📊 وضعیت isProcessing: ${isProcessing}`);
+
+  const handleButtonClick = () => {
+    console.log('🖱️ دکمه ضبط کلیک شد.');
+    console.log(`📊 isRecording قبل از کلیک: ${isRecording}`);
+
+    if (isRecording) {
+      console.log('⏹ درخواست توقف ضبط از دکمه...');
+      stopRecording();
+    } else {
+      console.log('🎤 درخواست شروع ضبط از دکمه...');
+      startRecording();
+    }
+
+    console.log(`📊 isRecording بعد از کلیک: ${isRecording}`);
+  };
+
   const handleSend = async () => {
+    console.log('📤 دکمه "Save" کلیک شد.');
+    console.log(`📊 audioBlob: ${audioBlob ? `${audioBlob.size} بایت` : 'خالی'}`);
+
     if (!audioBlob) {
-      console.warn("⚠️ هیچ فایل صوتی برای ارسال وجود ندارد.");
+      console.warn('⚠️ audioBlob خالی است، ادامه نمی‌دهیم.');
       return;
     }
 
-    console.log(`📤 ارسال فایل صوتی به سرور... (${audioBlob.size} بایت)`);
     setIsProcessing(true);
+    console.log('⏳ isProcessing = true');
 
     try {
       // 1. ارسال به API تبدیل صدا
+      console.log('📤 ارسال فایل صوتی به /api/transcribe...');
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
 
-      console.log("📡 ارسال درخواست به /api/transcribe");
       const transcribeRes = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
       });
 
-      const transcribeData = await transcribeRes.json();
-      console.log("📥 پاسخ از /api/transcribe:", transcribeData);
+      console.log(`📥 پاسخ از /api/transcribe: status ${transcribeRes.status}`);
 
       if (!transcribeRes.ok) {
-        throw new Error(transcribeData.error || 'Transcription failed');
+        const errorText = await transcribeRes.text();
+        console.error('❌ خطا در transcribe:', errorText);
+        throw new Error(errorText || 'Transcription failed');
       }
 
+      const transcribeData = await transcribeRes.json();
+      console.log('✅ متن تبدیل‌شده:', transcribeData.text);
+
       const rawText = transcribeData.text;
-      console.log(`📝 متن تبدیل‌شده: "${rawText}"`);
 
       // 2. ارسال به API ساختاردهی
-      console.log("📡 ارسال درخواست به /api/structure");
+      console.log('📤 ارسال متن به /api/structure...');
       const structureRes = await fetch('/api/structure', {
         method: 'POST',
         headers: {
@@ -50,15 +76,19 @@ export const RecordButton = () => {
         body: JSON.stringify({ text: rawText }),
       });
 
-      const structuredData = await structureRes.json();
-      console.log("📥 پاسخ از /api/structure:", structuredData);
+      console.log(`📥 پاسخ از /api/structure: status ${structureRes.status}`);
 
       if (!structureRes.ok) {
-        throw new Error(structuredData.error || 'Structuring failed');
+        const errorText = await structureRes.text();
+        console.error('❌ خطا در structure:', errorText);
+        throw new Error(errorText || 'Structuring failed');
       }
 
+      const structuredData = await structureRes.json();
+      console.log('✅ داده ساختاردهی‌شده:', structuredData);
+
       // 3. ذخیره در دیتابیس
-      console.log("💾 ذخیره آیتم در دیتابیس:", structuredData);
+      console.log('💾 ذخیره آیتم در دیتابیس...');
       await addItem({
         rawText,
         category: structuredData.category || 'idea',
@@ -66,23 +96,29 @@ export const RecordButton = () => {
         description: structuredData.description || rawText,
       });
 
+      console.log('✅ آیتم با موفقیت ذخیره شد.');
+
       // 4. پاک کردن فایل صوتی
       resetAudio();
-      console.log("✅ فرآیند با موفقیت کامل شد!");
+      console.log('🔄 فایل صوتی پاک شد.');
+
       alert('✅ Item successfully saved. Please review it in the "Pending Approval" section.');
+
     } catch (error: any) {
-      console.error("❌ خطا در فرآیند:", error);
+      console.error('❌ خطا در فرآیند ذخیره‌سازی:', error);
       alert('❌ Error: ' + (error.message || 'Something went wrong'));
     } finally {
       setIsProcessing(false);
+      console.log('⏳ isProcessing = false');
     }
   };
 
   return (
     <div className="flex flex-col items-center gap-4">
+      {/* Record Button */}
       <div className="relative">
         <button
-          onClick={isRecording ? stopRecording : startRecording}
+          onClick={handleButtonClick}
           disabled={isProcessing}
           className={`w-24 h-24 rounded-full text-white text-4xl shadow-xl transition-all duration-300 ${
             isRecording
@@ -92,11 +128,14 @@ export const RecordButton = () => {
         >
           {isRecording ? '⏹' : '🎙'}
         </button>
+
+        {/* Pulse animation while recording */}
         {isRecording && (
           <div className="absolute -inset-2 rounded-full border-4 border-red-300/50 animate-ping"></div>
         )}
       </div>
 
+      {/* Action Buttons after recording */}
       {!isRecording && audioBlob && (
         <div className="flex gap-3 mt-2">
           <Button variant="secondary" onClick={resetAudio} disabled={isProcessing}>
@@ -108,6 +147,7 @@ export const RecordButton = () => {
         </div>
       )}
 
+      {/* Recording status text */}
       {isRecording && (
         <p className="text-sm text-red-500 font-medium">⚫ Recording... (tap to stop)</p>
       )}

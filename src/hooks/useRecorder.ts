@@ -7,95 +7,110 @@ export const useRecorder = () => {
   const chunksRef = useRef<Blob[]>([]);
 
   const startRecording = async () => {
+    console.log('🎤 درخواست دسترسی به میکروفون...');
+
     try {
-      console.log("🎤 درخواست دسترسی به میکروفون...");
-      
-      // بررسی وجود getUserMedia
+      // بررسی وجود مرورگر و API مورد نیاز
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        console.error("❌ getUserMedia پشتیبانی نمی‌شود!");
-        alert('Microphone is not available. Please use HTTPS or localhost.');
+        console.error('❌ مرورگر از getUserMedia پشتیبانی نمی‌کند.');
+        alert('مرورگر شما از میکروفون پشتیبانی نمی‌کند. لطفاً از مرورگر جدیدتر استفاده کنید.');
         return;
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log("✅ دسترسی به میکروفون گرفته شد.");
+      console.log('✅ دسترسی به میکروفون گرفته شد.');
 
-      // تشخیص فرمت مناسب
+      // تشخیص فرمت مناسب برای مرورگر
       let options: MediaRecorderOptions = {};
       if (MediaRecorder.isTypeSupported('audio/mp4')) {
         options = { mimeType: 'audio/mp4' };
-        console.log("📀 فرمت انتخاب شده: audio/mp4");
+        console.log('📀 فرمت انتخاب شده: audio/mp4');
       } else if (MediaRecorder.isTypeSupported('audio/webm')) {
         options = { mimeType: 'audio/webm' };
-        console.log("📀 فرمت انتخاب شده: audio/webm");
+        console.log('📀 فرمت انتخاب شده: audio/webm');
+      } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+        options = { mimeType: 'audio/ogg' };
+        console.log('📀 فرمت انتخاب شده: audio/ogg');
       } else {
-        console.log("📀 فرمت پیش‌فرض استفاده می‌شود");
+        console.warn('⚠️ هیچ فرمت پشتیبانی‌شده‌ای پیدا نشد، از پیش‌فرض استفاده می‌شود.');
+        options = {};
       }
 
       const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
-      // رویداد دریافت داده
+      console.log('📹 MediaRecorder ساخته شد:', mediaRecorder);
+
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
-          console.log(`📦 تکه داده دریافت شد: ${e.data.size} بایت`);
           chunksRef.current.push(e.data);
+          console.log(`📦 تکه داده دریافت شد: ${e.data.size} بایت`);
         } else {
-          console.warn("⚠️ تکه داده خالی دریافت شد!");
+          console.warn('⚠️ تکه داده خالی دریافت شد.');
         }
       };
 
-      // رویداد پایان ضبط
       mediaRecorder.onstop = () => {
-        console.log(`⏹ ضبط متوقف شد. تعداد تکه‌ها: ${chunksRef.current.length}`);
-        if (chunksRef.current.length === 0) {
-          console.error("❌ هیچ داده‌ای ضبط نشد!");
-          alert('No audio data was recorded. Please check your microphone.');
-          return;
-        }
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        console.log(`📁 فایل صوتی ساخته شد: ${blob.size} بایت`);
+        console.log('⏹ ضبط متوقف شد. تعداد تکه‌ها:', chunksRef.current.length);
+        const blob = new Blob(chunksRef.current, { type: options.mimeType || 'audio/webm' });
+        console.log(`📦 حجم کل فایل صوتی: ${blob.size} بایت`);
         setAudioBlob(blob);
-        
-        // آزاد کردن استریم
+
+        // آزاد کردن میکروفون
         stream.getTracks().forEach(track => {
           track.stop();
-          console.log("🔇 ترک میکروفون آزاد شد");
+          console.log('🎤 یک ترک میکروفون آزاد شد.');
         });
+        console.log('✅ تمام ترک‌های میکروفون آزاد شدند.');
       };
 
-      // شروع ضبط
-      mediaRecorder.start(1000); // هر ۱ ثانیه یک تکه داده بگیر
+      mediaRecorder.onerror = (event) => {
+        console.error('❌ خطا در MediaRecorder:', event);
+      };
+
+      mediaRecorder.start();
       setIsRecording(true);
-      console.log("🔴 ضبط شروع شد.");
+      console.log('🔴 ضبط شروع شد.');
 
     } catch (error: any) {
-      console.error("❌ خطا در دسترسی به میکروفون:", error);
+      console.error('❌ خطا در دسترسی به میکروفون:', error);
+
+      // نمایش پیام خطای مناسب به کاربر
       if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-        alert('No microphone found. Please connect a microphone and try again.');
+        alert('❌ هیچ میکروفونی پیدا نشد. لطفاً یک میکروفون وصل کنید و دوباره امتحان کنید.');
       } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        alert('Microphone access blocked. Please allow access in browser settings.');
+        alert('❌ دسترسی به میکروفون مسدود شده است. لطفاً در تنظیمات مرورگر اجازه‌ی دسترسی را بدهید.');
+      } else if (error.name === 'NotSupportedError') {
+        alert('❌ مرورگر شما از ضبط صدا پشتیبانی نمی‌کند. لطفاً از مرورگر جدیدتر استفاده کنید.');
       } else {
-        alert('Microphone error: ' + (error.message || 'Unknown error'));
+        alert('❌ خطای میکروفون: ' + (error.message || 'خطای ناشناخته'));
       }
     }
   };
 
   const stopRecording = () => {
+    console.log('⏹ توقف ضبط درخواست شد.');
+    console.log(`📊 وضعیت فعلی isRecording: ${isRecording}`);
+    console.log(`📊 mediaRecorderRef.current: ${mediaRecorderRef.current ? 'وجود دارد' : 'وجود ندارد'}`);
+
     if (mediaRecorderRef.current && isRecording) {
-      console.log("⏹ درخواست توقف ضبط...");
+      console.log('🛑 در حال توقف MediaRecorder...');
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      console.log('✅ ضبط با موفقیت متوقف شد. isRecording = false');
     } else {
-      console.warn("⚠️ تلاش برای توقف ضبط در حالی که در حال ضبط نیستیم!");
+      console.warn('⚠️ ضبط در حال اجرا نیست یا MediaRecorder موجود نیست.');
+      console.warn(`   - isRecording: ${isRecording}`);
+      console.warn(`   - mediaRecorderRef: ${mediaRecorderRef.current ? 'موجود' : 'ناموجود'}`);
     }
   };
 
   const resetAudio = () => {
-    console.log("🔄 ریست فایل صوتی");
+    console.log('🔄 بازنشانی (Reset) فایل صوتی درخواست شد.');
     setAudioBlob(null);
     chunksRef.current = [];
+    console.log('✅ فایل صوتی بازنشانی شد.');
   };
 
   return {

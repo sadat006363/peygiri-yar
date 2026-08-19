@@ -50,7 +50,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
   const [editTitle, setEditTitle] = useState(item.title);
   const [editDesc, setEditDesc] = useState(item.description);
   const [editPriority, setEditPriority] = useState<Priority>(item.priority);
-  // ✅ مقداردهی اولیه: اگر dueDate null باشد، تبدیل به رشته‌ی خالی می‌شود
   const [editDueDate, setEditDueDate] = useState<string>(item.dueDate || '');
 
   const handleApprove = async () => {
@@ -95,7 +94,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
         title: editTitle,
         description: editDesc,
         priority: editPriority,
-        // ✅ اگر editDueDate خالی باشد، null ارسال می‌شود
         dueDate: editDueDate || null,
       });
       setIsEditing(false);
@@ -195,7 +193,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
         </select>
         <input
           type="date"
-          value={editDueDate} // ✅ editDueDate همیشه string است
+          value={editDueDate ?? ''}   // ✅ راه‌حل قطعی: استفاده از ?? برای تبدیل undefined/null به رشته‌ی خالی
           onChange={(e) => setEditDueDate(e.target.value)}
           className="w-full border border-gray-300 rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
         />

@@ -47,8 +47,6 @@ const statusColors: Record<string, string> = {
 export const ItemCard = ({ item }: { item: Item }) => {
   const { updateItem, deleteItem } = useItemStore();
   const [isEditing, setIsEditing] = useState(false);
-
-  // ✅ مقداردهی اولیه با ?? '' برای جلوگیری از null
   const [editTitle, setEditTitle] = useState<string>(item.title ?? '');
   const [editDesc, setEditDesc] = useState<string>(item.description ?? '');
   const [editPriority, setEditPriority] = useState<Priority>(item.priority);
@@ -90,14 +88,13 @@ export const ItemCard = ({ item }: { item: Item }) => {
     }
   };
 
-  // ✅ اصلاح مهم: ارسال undefined به‌جای null
   const handleSaveEdit = async () => {
     if (item.id) {
       await updateItem(item.id, {
         title: editTitle,
         description: editDesc,
         priority: editPriority,
-        dueDate: editDueDate || undefined, // ← تبدیل به undefined
+        dueDate: editDueDate || undefined,
       });
       setIsEditing(false);
     }
@@ -107,6 +104,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
     <>
       <Card className="transition-all hover:border-indigo-200">
         <div className="flex flex-col gap-2">
+          {/* برچسب‌ها: دسته + اولویت + وضعیت */}
           <div className="flex flex-wrap justify-between items-start gap-2">
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${categoryColors[item.category]}`}>
               {categoryLabels[item.category] || item.category}
@@ -121,6 +119,22 @@ export const ItemCard = ({ item }: { item: Item }) => {
 
           <h4 className="font-bold text-gray-800 text-lg">{item.title}</h4>
           <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
+
+          {/* نمایش اصلاحات (اگر وجود داشته باشد) */}
+          {item.rawTranscript && item.correctedTranscript && item.rawTranscript !== item.correctedTranscript && (
+            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs text-gray-500">🗣️ Original: {item.rawTranscript}</p>
+              <p className="text-xs text-green-600">✨ Corrected: {item.correctedTranscript}</p>
+              {item.confidence && item.confidence < 0.85 && (
+                <p className="text-xs text-orange-600 mt-1">
+                  ⚠️ Low confidence ({Math.round(item.confidence * 100)}%). Please verify.
+                </p>
+              )}
+              {item.correctionStatus === 'ai_corrected' && (
+                <p className="text-xs text-blue-500 mt-1">🤖 AI corrected</p>
+              )}
+            </div>
+          )}
 
           {item.dueDate && (
             <div className="text-xs text-gray-500">
@@ -144,6 +158,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
             </span>
           </div>
 
+          {/* دکمه‌های عملیاتی بر اساس وضعیت */}
           {item.status === 'pending' && (
             <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100">
               <Button variant="success" size="sm" onClick={handleApprove}>✔ Approve</Button>

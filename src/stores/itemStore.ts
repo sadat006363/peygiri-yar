@@ -44,7 +44,11 @@ export const useItemStore = create<ItemState>((set, get) => ({
       status: 'pending',
       createdAt: now,
       updatedAt: now,
-      // استفاده از null به جای undefined برای سازگاری با تایپ
+      // فیلدهای جدید با مقدار پیش‌فرض مناسب
+      rawTranscript: item.rawTranscript || item.rawText,
+      correctedTranscript: item.correctedTranscript || item.rawText,
+      correctionStatus: item.correctionStatus || 'none',
+      confidence: item.confidence ?? 1.0,
       followUpCondition: item.followUpCondition ?? null,
       followUpDate: item.followUpDate ?? null,
       project: item.project ?? null,

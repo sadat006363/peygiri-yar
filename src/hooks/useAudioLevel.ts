@@ -35,9 +35,12 @@ export const useAudioLevel = (stream: MediaStream | null) => {
     const updateLevel = () => {
       if (!analyserRef.current || !dataArrayRef.current) return;
       
-      analyserRef.current.getByteFrequencyData(dataArrayRef.current);
-      const sum = dataArrayRef.current.reduce((a, b) => a + b, 0);
-      const average = sum / dataArrayRef.current.length;
+      // ✅ تبدیل نوع با as برای رفع خطای TypeScript
+      const data = dataArrayRef.current as Uint8Array<ArrayBuffer>;
+      analyserRef.current.getByteFrequencyData(data);
+      
+      const sum = data.reduce((a, b) => a + b, 0);
+      const average = sum / data.length;
       const normalized = Math.min(average / 128, 1);
       setLevel(normalized);
       

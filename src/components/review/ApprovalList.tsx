@@ -1,99 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useItemStore } from '@/stores/itemStore';
-import { Item } from '@/lib/types';
-import { Card } from '../ui/Card';
+import { ItemCard } from './ItemCard';
 
-export const TodayTasks = () => {
-  const { activeItems, fetchItems, isLoading } = useItemStore();
-  const [todayItems, setTodayItems] = useState<Item[]>([]);
-  const [weekItems, setWeekItems] = useState<Item[]>([]);
+export const ApprovalList = () => {
+  const { pendingItems, fetchItems, isLoading } = useItemStore();
 
   useEffect(() => {
     fetchItems();
   }, []);
 
-  useEffect(() => {
-    if (activeItems.length === 0) return;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const weekLater = new Date(today);
-    weekLater.setDate(today.getDate() + 7);
-
-    const todayList = activeItems.filter(i => {
-      if (!i.dueDate) return false;
-      const due = new Date(i.dueDate);
-      due.setHours(0, 0, 0, 0);
-      return due.getTime() === today.getTime();
-    });
-
-    const weekList = activeItems.filter(i => {
-      if (!i.dueDate) return false;
-      const due = new Date(i.dueDate);
-      due.setHours(0, 0, 0, 0);
-      return due.getTime() >= today.getTime() && due.getTime() <= weekLater.getTime() && due.getTime() !== today.getTime();
-    });
-
-    setTodayItems(todayList);
-    setWeekItems(weekList);
-  }, [activeItems]);
-
   if (isLoading) return <p className="text-gray-400 text-center py-4">Loading...</p>;
 
-  if (todayItems.length === 0 && weekItems.length === 0) {
-    return (
-      <Card className="bg-gray-50 border-dashed">
-        <p className="text-gray-400 text-center py-4">📭 No active tasks for today or this week.</p>
-      </Card>
-    );
+  if (pendingItems.length === 0) {
+    return <p className="text-gray-400 text-center py-4">No items pending approval.</p>;
   }
 
   return (
-    <div className="space-y-6">
-      {todayItems.length > 0 && (
-        <div>
-          <h3 className="text-lg font-bold text-gray-800 mb-3">📅 Today ({todayItems.length})</h3>
-          <div className="space-y-2">
-            {todayItems.map((item) => (
-              <Card key={item.id} className="border-l-4 border-indigo-500 bg-indigo-50/50">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-bold text-gray-800">{item.title}</h4>
-                    <p className="text-sm text-gray-600">{item.description}</p>
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${item.priority === 'high' ? 'bg-red-100 text-red-700' : item.priority === 'medium' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {item.priority}
-                  </span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {weekItems.length > 0 && (
-        <div>
-          <h3 className="text-lg font-bold text-gray-800 mb-3">📆 This Week ({weekItems.length})</h3>
-          <div className="space-y-2">
-            {weekItems.map((item) => (
-              <Card key={item.id} className="border-l-4 border-orange-300">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-bold text-gray-800">{item.title}</h4>
-                    <p className="text-sm text-gray-600">{item.description}</p>
-                    <p className="text-xs text-gray-400 mt-1">📅 {item.dueDate ? new Date(item.dueDate).toLocaleDateString('en-US') : ''}</p>
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${item.priority === 'high' ? 'bg-red-100 text-red-700' : item.priority === 'medium' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {item.priority}
-                  </span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="space-y-4">
+      <h3 className="font-bold text-gray-700">📋 Pending ({pendingItems.length})</h3>
+      {pendingItems.map((item) => (
+        <ItemCard key={item.id} item={item} />
+      ))}
     </div>
   );
 };

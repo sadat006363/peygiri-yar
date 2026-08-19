@@ -7,37 +7,37 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 
-const categoryColors: Record<string, string> = {
+const categoryColors = {
   customer: 'bg-blue-100 text-blue-800',
   task: 'bg-green-100 text-green-800',
   cost: 'bg-yellow-100 text-yellow-800',
   idea: 'bg-purple-100 text-purple-800',
 };
-const categoryLabels: Record<string, string> = {
+const categoryLabels = {
   customer: '👤 Customer',
   task: '✅ Task',
   cost: '💰 Cost',
   idea: '💡 Idea',
 };
 
-const priorityColors: Record<Priority, string> = {
+const priorityColors = {
   high: 'bg-red-100 text-red-700',
   medium: 'bg-orange-100 text-orange-700',
   low: 'bg-blue-100 text-blue-700',
 };
-const priorityLabels: Record<Priority, string> = {
+const priorityLabels = {
   high: '🔴 High',
   medium: '🟡 Medium',
   low: '🔵 Low',
 };
 
-const statusLabels: Record<string, string> = {
+const statusLabels = {
   pending: '⏳ Pending',
   active: '✅ Active',
   completed: '✔ Completed',
   rejected: '✖ Rejected',
 };
-const statusColors: Record<string, string> = {
+const statusColors = {
   pending: 'bg-gray-100 text-gray-700',
   active: 'bg-green-100 text-green-700',
   completed: 'bg-blue-100 text-blue-700',
@@ -88,10 +88,8 @@ export const ItemCard = ({ item }: { item: Item }) => {
     }
   };
 
-  // ✅ ذخیره اصلاحات در حافظه
   const saveToCorrectionMemory = async (original: string, corrected: string) => {
     if (original.trim() === corrected.trim()) return;
-    
     try {
       const res = await fetch('/api/correction-memory/save', {
         method: 'POST',
@@ -101,7 +99,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
           corrected: corrected.trim(),
         }),
       });
-      
       if (res.ok) {
         console.log('✅ اصلاحات در حافظه ذخیره شد.');
       } else {
@@ -114,21 +111,18 @@ export const ItemCard = ({ item }: { item: Item }) => {
 
   const handleSaveEdit = async () => {
     if (item.id) {
-      // قبل از ذخیره، اصلاحات را در حافظه ذخیره کن
       if (item.description !== editDesc) {
         await saveToCorrectionMemory(item.description, editDesc);
       }
       if (item.title !== editTitle) {
         await saveToCorrectionMemory(item.title, editTitle);
       }
-
       await updateItem(item.id, {
         title: editTitle,
         description: editDesc,
         priority: editPriority,
         dueDate: editDueDate || undefined,
       });
-      
       setIsEditing(false);
       alert('✅ Item updated and corrections saved to memory.');
     }
@@ -189,6 +183,36 @@ export const ItemCard = ({ item }: { item: Item }) => {
               {item.createdAt ? new Date(item.createdAt).toLocaleString('en-US') : 'Just now'}
             </span>
           </div>
+
+          {item.confidence !== undefined && item.confidence < 1 && (
+            <div className="mt-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Confidence:</span>
+                <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden max-w-24">
+                  <div 
+                    className={`h-full rounded-full ${
+                      item.confidence >= 0.85 ? 'bg-green-500' :
+                      item.confidence >= 0.7 ? 'bg-yellow-500' :
+                      'bg-red-500'
+                    }`}
+                    style={{ width: `${item.confidence * 100}%` }}
+                  />
+                </div>
+                <span className={`text-xs font-medium ${
+                  item.confidence >= 0.85 ? 'text-green-600' :
+                  item.confidence >= 0.7 ? 'text-yellow-600' :
+                  'text-red-600'
+                }`}>
+                  {Math.round(item.confidence * 100)}%
+                </span>
+              </div>
+              {item.confidence < 0.85 && (
+                <p className="text-[10px] text-orange-600 mt-0.5">
+                  ⚠️ Low confidence. Please review the content carefully.
+                </p>
+              )}
+            </div>
+          )}
 
           {item.status === 'pending' && (
             <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100">

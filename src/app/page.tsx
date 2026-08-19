@@ -28,13 +28,14 @@ export default function Home() {
           <div className="w-24 h-1 bg-gradient-to-r from-indigo-400 to-purple-400 mx-auto mt-3 rounded-full"></div>
         </header>
 
+        {/* ===== RECORDER (با راهنمای داخلی) ===== */}
         <Card className="mb-8 bg-white/80 backdrop-blur-sm border border-white/50 shadow-xl">
           <div className="py-4">
             <RecordButton />
           </div>
         </Card>
 
-        {/* ===== ATTENTION TODAY (NEW) ===== */}
+        {/* ===== ATTENTION TODAY ===== */}
         <section className="mb-10">
           <AttentionToday />
         </section>

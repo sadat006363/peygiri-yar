@@ -2,10 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRecorder } from '@/hooks/useRecorder';
+import { useAudioLevel } from '@/hooks/useAudioLevel';
 import { useItemStore } from '@/stores/itemStore';
+import { RecordingGuide } from './RecordingGuide';
 
 export const RecordButton = () => {
-  const { isRecording, audioBlob, startRecording, stopRecording, resetAudio, isRecordingRef } = useRecorder();
+  const { isRecording, audioBlob, startRecording, stopRecording, resetAudio, isRecordingRef, stream } = useRecorder();
+  const audioLevel = useAudioLevel(isRecording ? stream : null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { addItem } = useItemStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,12 +72,12 @@ export const RecordButton = () => {
         timerRef.current = null;
       }
       timerRef.current = setTimeout(() => {
-        console.log('⏰ توقف خودکار پس از دو دقیقه...');
+        console.log('⏰ توقف خودکار پس از ۶۰ ثانیه...');
         if (isRecordingRef.current) {
           stopRecording();
         }
         timerRef.current = null;
-      }, 120000);
+      }, 60000);
     }
   };
 
@@ -84,35 +87,13 @@ export const RecordButton = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // ============= تابع جستجو در حافظه‌ی اصلاحات =============
-  const searchCorrectionMemory = async (text: string): Promise<{ 
-    found: boolean; 
-    corrections: any[]; 
-    suggestion?: string;
-  }> => {
-    try {
-      console.log('🔍 جستجو در حافظه‌ی اصلاحات...');
-      const res = await fetch('/api/correction-memory/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
-      
-      if (!res.ok) {
-        console.warn('⚠️ خطا در جستجوی حافظه');
-        return { found: false, corrections: [] };
-      }
-      
-      const data = await res.json();
-      console.log('✅ نتیجه جستجو:', data);
-      return data;
-    } catch (error) {
-      console.warn('⚠️ خطا در جستجوی حافظه:', error);
-      return { found: false, corrections: [] };
-    }
+  const getLevelColor = (level: number) => {
+    if (level < 0.3) return 'bg-gray-300';
+    if (level < 0.6) return 'bg-yellow-400';
+    if (level < 0.8) return 'bg-green-500';
+    return 'bg-red-500';
   };
 
-  // ============= تابع اصلی handleSend =============
   const handleSend = async () => {
     console.log('📤 handleSend فراخوانی شد.');
 
@@ -133,9 +114,6 @@ export const RecordButton = () => {
     setIsProcessing(true);
 
     try {
-      // =====================================================
-      // مرحله 1: تبدیل صدا به متن با Whisper
-      // =====================================================
       console.log('📤 مرحله 1: ارسال فایل صوتی به /api/transcribe...');
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
@@ -165,60 +143,39 @@ export const RecordButton = () => {
         return;
       }
 
-      // =====================================================
-      // مرحله 1.5: جستجو در حافظه‌ی اصلاحات (✅ جدید)
-      // =====================================================
-      const memoryResult = await searchCorrectionMemory(rawText);
-      let correctedText = rawText;
-      let memoryChanges: any[] = [];
-
-      if (memoryResult.found && memoryResult.corrections.length > 0) {
-        console.log('✅ کلمه/عبارت در حافظه پیدا شد:', memoryResult.corrections);
-        
-        // اعمال اصلاحات از حافظه روی متن
-        let tempText = rawText;
-        for (const mem of memoryResult.corrections) {
-          // بررسی اینکه آیا کلمه در متن وجود دارد
-          if (tempText.includes(mem.originalText)) {
-            tempText = tempText.replaceAll(mem.originalText, mem.correctedText);
-            memoryChanges.push({
-              original: mem.originalText,
-              corrected: mem.correctedText,
-              reason: 'از حافظه‌ی اصلاحات کاربر',
-              confidence: 0.95,
-              fromMemory: true,
-            });
-            console.log(`🔄 اصلاح از حافظه: "${mem.originalText}" → "${mem.correctedText}"`);
-          }
+      console.log('📊 دریافت اصلاحات پرکاربرد...');
+      let userCorrections = [];
+      try {
+        const memoryRes = await fetch('/api/correction-memory/most-used?limit=20');
+        if (memoryRes.ok) {
+          const memoryData = await memoryRes.json();
+          userCorrections = memoryData.data || [];
+          console.log(`✅ ${userCorrections.length} اصلاحات پرکاربرد دریافت شد.`);
         }
-        
-        // اگر تغییری اعمال شد، متن را به‌روز می‌کنیم
-        if (memoryChanges.length > 0) {
-          correctedText = tempText;
-        }
+      } catch (error) {
+        console.warn('⚠️ خطا در دریافت اصلاحات پرکاربرد:', error);
       }
 
-      // =====================================================
-      // مرحله 2: اصلاح متن با GPT (با استفاده از اصلاحات حافظه)
-      // =====================================================
       console.log('📤 مرحله 2: ارسال متن به /api/correct برای اصلاح...');
       
-      // اگر از حافظه اصلاح شده، به GPT هم می‌فرستیم برای اصلاحات بیشتر
       const correctionPayload = {
-        text: correctedText,
+        text: rawText,
         knownPeople: ['علی رضایی', 'رضا موسوی', 'سارا احمدی'],
         knownProjects: ['PromptYar', 'Zbloue', 'Direct2Chat'],
         knownTerms: ['Whisper', 'Next.js', 'Supabase'],
-        // اضافه کردن اصلاحات حافظه به عنوان context
-        memoryCorrections: memoryChanges.map(c => ({
-          original: c.original,
-          corrected: c.corrected,
+        userCorrections: userCorrections.map((c) => ({
+          original: c.originalText,
+          corrected: c.correctedText,
         })),
       };
-      console.log('📦 داده‌های ارسالی به correction:', correctionPayload);
 
-      let gptCorrectedText = correctedText;
-      let correctionChanges: any[] = [];
+      console.log('📦 داده‌های ارسالی به correction:', {
+        ...correctionPayload,
+        userCorrections: correctionPayload.userCorrections.slice(0, 5),
+      });
+
+      let correctedText = rawText;
+      let correctionChanges = [];
       let needsConfirmation = false;
       let confidence = 1.0;
 
@@ -238,34 +195,23 @@ export const RecordButton = () => {
           const correctData = await correctRes.json();
           console.log('✅ داده‌های اصلاح‌شده:', correctData);
 
-          // ترکیب اصلاحات حافظه و اصلاحات GPT
-          gptCorrectedText = correctData.correctedText || correctedText;
+          correctedText = correctData.correctedText || rawText;
           correctionChanges = correctData.changes || [];
           needsConfirmation = correctData.needsConfirmation !== false;
           
-          // محاسبه‌ی میانگین confidence
-          const allChanges = [...memoryChanges, ...correctionChanges];
-          if (allChanges.length > 0) {
-            const totalConfidence = allChanges.reduce((sum: number, c: any) => sum + (c.confidence || 0.5), 0);
-            confidence = Math.min(totalConfidence / allChanges.length, 1.0);
-          }
-          
-          // اگر GPT اصلاحات بیشتری داشت، متن نهایی را از GPT بگیریم
           if (correctionChanges.length > 0) {
-            correctedText = gptCorrectedText;
+            const totalConfidence = correctionChanges.reduce((sum, c) => sum + (c.confidence || 0.5), 0);
+            confidence = Math.min(totalConfidence / correctionChanges.length, 1.0);
           }
           
           console.log('✅ متن اصلاح‌شده نهایی:', correctedText);
-          console.log(`📊 تعداد کل اصلاحات: ${allChanges.length}`);
+          console.log(`📊 تعداد اصلاحات: ${correctionChanges.length}`);
           console.log(`📊 اطمینان متوسط: ${confidence.toFixed(2)}`);
         }
-      } catch (error: any) {
+      } catch (error) {
         console.warn('⚠️ خطا در فراخوانی correction API:', error.message);
       }
 
-      // =====================================================
-      // مرحله 3: ساختاردهی با GPT
-      // =====================================================
       console.log('📤 مرحله 3: ارسال متن به /api/structure...');
       const structureRes = await fetch('/api/structure', {
         method: 'POST',
@@ -284,16 +230,13 @@ export const RecordButton = () => {
       const structuredData = await structureRes.json();
       console.log('✅ داده ساختاردهی‌شده:', structuredData);
 
-      // =====================================================
-      // مرحله 4: ذخیره‌سازی در دیتابیس
-      // =====================================================
       console.log('📤 مرحله 4: ذخیره آیتم در دیتابیس...');
       await addItem({
         rawText: rawText,
         correctedText: correctedText,
         rawTranscript: rawText,
         correctedTranscript: correctedText,
-        correctionStatus: (memoryChanges.length > 0 || correctionChanges.length > 0) ? 'ai_corrected' : 'none',
+        correctionStatus: correctionChanges.length > 0 ? 'ai_corrected' : 'none',
         confidence: confidence,
         category: structuredData.category || 'idea',
         title: structuredData.title || 'Untitled',
@@ -305,7 +248,7 @@ export const RecordButton = () => {
       console.log('✅ آیتم با موفقیت ذخیره شد.');
       resetAudio();
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('❌ خطای کلی در handleSend:', error);
       alert('❌ Error: ' + (error.message || 'Something went wrong'));
       resetAudio();
@@ -318,6 +261,7 @@ export const RecordButton = () => {
 
   return (
     <div className="flex flex-col items-center gap-4">
+      <RecordingGuide />
       <div className="relative">
         <button
           type="button"
@@ -331,7 +275,6 @@ export const RecordButton = () => {
         >
           {isRecording ? '⏹' : '🎙'}
         </button>
-
         {isRecording && (
           <div
             aria-hidden="true"
@@ -339,12 +282,23 @@ export const RecordButton = () => {
           />
         )}
       </div>
-
       {isRecording && (
-        <div className="text-center">
+        <div className="text-center w-full max-w-xs">
           <p className="text-sm text-red-500 font-medium">⚫ Recording... (tap to stop)</p>
           <p className="text-xs text-gray-400 mt-1">
-            ⏱️ {formatTime(recordingTime)} / max 2:00
+            ⏱️ {formatTime(recordingTime)} / max 1:00
+          </p>
+          <div className="mt-2 w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              className={`h-full transition-all duration-100 ${getLevelColor(audioLevel)}`}
+              style={{ width: `${audioLevel * 100}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-gray-400 mt-0.5">
+            {audioLevel < 0.3 && '🔇 Speak louder or move closer'}
+            {audioLevel >= 0.3 && audioLevel < 0.6 && '🔊 Good volume'}
+            {audioLevel >= 0.6 && audioLevel < 0.8 && '🎤 Great quality'}
+            {audioLevel >= 0.8 && '📢 Too loud! Move away slightly'}
           </p>
         </div>
       )}

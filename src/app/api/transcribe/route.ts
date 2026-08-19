@@ -14,13 +14,15 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
     const file = new File([buffer], 'audio.webm', { type: 'audio/webm' });
 
-    // ✅ حذف language و استفاده از auto-detection توسط Whisper
+    // ✅ اضافه کردن prompt برای راهنمایی Whisper
+    const promptText = 'This is a Persian business conversation. The speaker may mention names like Ali, Reza, Sara, Mohammad, and project names like PromptYar, Zbloue, Direct2Chat.';
+
     const transcription = await openai.audio.transcriptions.create({
       file: file,
       model: 'whisper-1',
-      response_format: 'text',  // متن ساده برگردانده شود
-      // prompt اختیاری برای راهنمایی
-      prompt: 'This is a business conversation in Persian or English.',
+      response_format: 'text',
+      prompt: promptText,
+      temperature: 0.2,  // پایین‌تر برای ثبات بیشتر
     });
 
     return NextResponse.json({ text: transcription });

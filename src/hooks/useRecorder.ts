@@ -9,7 +9,6 @@ export const useRecorder = () => {
   const streamRef = useRef<MediaStream | null>(null);
 
   const startRecording = async () => {
-    // ✅ جلوگیری از شروع مجدد ضبط
     if (isRecordingRef.current) {
       console.log('⚠️ ضبط در حال اجراست، شروع مجدد غیرممکن است.');
       return;
@@ -24,7 +23,17 @@ export const useRecorder = () => {
         return;
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // ✅ تنظیمات کیفیت صدا برای ضبط با کیفیت بهتر
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: 16000,        // نرخ نمونه‌برداری ۱۶ کیلوهرتز (مناسب برای گفتار)
+          channelCount: 1,          // مونو (یک کانال)
+          echoCancellation: true,   // حذف پژواک
+          noiseSuppression: true,   // کاهش نویز پس‌زمینه
+          autoGainControl: true,    // تنظیم خودکار بهره (حجم صدا)
+        }
+      });
+      
       console.log('✅ دسترسی به میکروفون گرفته شد.');
       streamRef.current = stream;
 
@@ -53,13 +62,10 @@ export const useRecorder = () => {
 
       mediaRecorder.onstop = () => {
         console.log('⏹ ضبط متوقف شد. تعداد تکه‌ها:', chunksRef.current.length);
-
-        // ساخت فایل صوتی از تکه‌ها
         const blob = new Blob(chunksRef.current, { type: options.mimeType || 'audio/webm' });
         console.log(`📦 حجم کل فایل صوتی: ${blob.size} بایت`);
         setAudioBlob(blob);
 
-        // ✅ آزادسازی stream پس از توقف کامل
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => {
             track.stop();
@@ -68,7 +74,6 @@ export const useRecorder = () => {
           streamRef.current = null;
         }
 
-        // ✅ به‌روزرسانی وضعیت‌ها
         isRecordingRef.current = false;
         setIsRecording(false);
         console.log('📊 isRecordingRef به false تنظیم شد.');
@@ -95,19 +100,15 @@ export const useRecorder = () => {
     console.log(`📊 isRecordingRef: ${isRecordingRef.current}`);
 
     try {
-      // ✅ ابتدا ref را false می‌کنیم تا از اجرای مجدد جلوگیری شود
       isRecordingRef.current = false;
 
       if (mediaRecorderRef.current) {
         console.log(`📊 وضعیت MediaRecorder: ${mediaRecorderRef.current.state}`);
-
         if (mediaRecorderRef.current.state === 'recording') {
           console.log('🛑 در حال توقف MediaRecorder...');
           mediaRecorderRef.current.stop();
-          // توجه: onstop به‌طور خودکار وضعیت‌ها را به‌روز می‌کند
         } else {
           console.warn('⚠️ MediaRecorder در حالت recording نیست، state:', mediaRecorderRef.current.state);
-          // اگر در حالت inactive است، فقط state را به‌روز می‌کنیم
           setIsRecording(false);
         }
       } else {
@@ -115,7 +116,6 @@ export const useRecorder = () => {
         setIsRecording(false);
       }
 
-      // ✅ آزادسازی stream اگر باقی مانده باشد (به‌عنوان پشتیبان)
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
@@ -124,7 +124,6 @@ export const useRecorder = () => {
 
     } catch (error: any) {
       console.error('❌ خطا در stopRecording:', error);
-      // در صورت خطا، بازنشانی اجباری
       setIsRecording(false);
       isRecordingRef.current = false;
     }
@@ -144,5 +143,6 @@ export const useRecorder = () => {
     stopRecording,
     resetAudio,
     isRecordingRef,
+    stream: streamRef.current, // ✅ خروجی stream برای متر صدا
   };
 };

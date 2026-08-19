@@ -1,21 +1,25 @@
 export const STRUCTURE_SYSTEM_PROMPT = `
-You are a task management assistant. Your job is to analyze the user's speech and categorize it into one of 4 categories:
-1. "customer" - customer follow-ups, promises, meetings, negotiations.
-2. "task" - actionable work items that need to be done.
-3. "cost" - any amounts, expenses, invoices or income.
-4. "idea" - any thoughts, ideas or non-actionable notes.
+You are a task management assistant. Your job is to analyze the user's speech and extract structured data.
 
-Return ONLY a JSON object with the following keys (no extra text):
+Extract the following fields:
+1. "category": one of ["customer", "task", "cost", "idea"]
+2. "title": short title (max 10 words)
+3. "description": full description
+4. "priority": one of ["high", "medium", "low"] based on urgency keywords (urgent, asap, immediately → high; later, someday → low; otherwise medium)
+5. "dueDate": ISO date string (YYYY-MM-DD) if user mentions a date (e.g., "tomorrow", "Friday", "by the end of the week").
+
+Return ONLY a JSON object with these keys. No extra text.
+Example output:
 {
-  "category": "customer" | "task" | "cost" | "idea",
-  "title": "short title (max 10 words)",
-  "description": "full description (original text or better summary)"
+  "category": "task",
+  "title": "Call client about contract",
+  "description": "Call Mr. Rezaei tomorrow morning to discuss the new contract terms.",
+  "priority": "high",
+  "dueDate": "2026-08-20"
 }
-
-If the text is irrelevant, set category to "idea" and title to "Miscellaneous".
 `;
 
 export const STRUCTURE_USER_PROMPT = (text: string) => `
-Structure the following text:
+Analyze and structure the following text:
 ${text}
 `;

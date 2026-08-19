@@ -15,12 +15,17 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  // ✅ درخواست مجوز نوتیفیکیشن هنگام بارگذاری
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        console.log('🔔 مجوز نوتیفیکیشن:', permission);
+      });
+    }
+  }
+
   return (
     <html lang="en" dir="ltr">
-      <head>
-        <link rel="icon" href="/icon-192.png" sizes="192x192" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-      </head>
       <body className="antialiased">{children}</body>
     </html>
   );

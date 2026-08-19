@@ -4,15 +4,11 @@ import { STRUCTURE_SYSTEM_PROMPT, STRUCTURE_USER_PROMPT } from '@/lib/ai/prompts
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("📥 درخواست جدید به /api/structure دریافت شد.");
     const { text } = await req.json();
 
     if (!text || text.trim().length === 0) {
-      console.error("❌ متن ورودی خالی است.");
       return NextResponse.json({ error: 'متن ورودی خالی است' }, { status: 400 });
     }
-
-    console.log(`📝 متن ورودی: "${text}"`);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -26,11 +22,17 @@ export async function POST(req: NextRequest) {
 
     const content = response.choices[0]?.message?.content || '{}';
     const structured = JSON.parse(content);
-    console.log("✅ خروجی ساختاردهی:", structured);
 
-    return NextResponse.json(structured);
+    // مقداردهی پیش‌فرض برای فیلدهای جدید
+    return NextResponse.json({
+      category: structured.category || 'idea',
+      title: structured.title || 'Untitled',
+      description: structured.description || text,
+      priority: structured.priority || 'medium',
+      dueDate: structured.dueDate || null,
+    });
   } catch (error: any) {
-    console.error("❌ خطا در /api/structure:", error);
+    console.error('Error in structure API:', error);
     return NextResponse.json(
       { error: error.message || 'خطا در ساختاردهی متن' },
       { status: 500 }

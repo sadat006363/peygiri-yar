@@ -10,21 +10,31 @@ export const RecordButton = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { addItem } = useItemStore();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const timeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  console.log('🔄 RecordButton رندر شد.');
-  console.log(`📊 وضعیت isRecording: ${isRecording}`);
-  console.log(`📊 وضعیت audioBlob: ${audioBlob ? `${audioBlob.size} بایت` : 'خالی'}`);
-  console.log(`📊 وضعیت isProcessing: ${isProcessing}`);
-
+  // پاک کردن تایمرها هنگام unmount
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        console.log('🧹 پاک کردن تایمر در unmount');
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timeIntervalRef.current) clearInterval(timeIntervalRef.current);
     };
   }, []);
+
+  // مدیریت تایمر زمان ضبط
+  useEffect(() => {
+    if (isRecording) {
+      setRecordingTime(0);
+      timeIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (timeIntervalRef.current) {
+        clearInterval(timeIntervalRef.current);
+        timeIntervalRef.current = null;
+      }
+    }
+  }, [isRecording]);
 
   const handleClick = () => {
     console.log('🖱️ دکمه کلیک شد.');
@@ -44,21 +54,22 @@ export const RecordButton = () => {
       console.log('🎤 درخواست شروع ضبط...');
       startRecording();
 
-      console.log('⏰ تنظیم تایمر خودکار برای 15 ثانیه...');
+      // ⏰ تایمر ایمنی ۲ دقیقه‌ای (۱۲۰ ثانیه)
+      console.log('⏰ تنظیم تایمر ایمنی برای 120 ثانیه...');
       timerRef.current = setTimeout(() => {
-        console.log('⏰ تایمر خودکار: در حال فراخوانی stopRecording...');
-        console.log(`📊 isRecording هنگام تایمر: ${isRecording}`);
-        console.log(`📊 isRecordingRef هنگام تایمر: ${isRecordingRef.current}`);
-        
-        // ✅ استفاده از ref به جای state
+        console.log('⏰ تایمر ایمنی: در حال فراخوانی stopRecording...');
         if (isRecordingRef.current) {
           stopRecording();
-        } else {
-          console.warn('⚠️ تایمر اجرا شد ولی isRecordingRef false است. ضبط قبلاً متوقف شده.');
         }
         timerRef.current = null;
-      }, 15000);
+      }, 120000); // ۲ دقیقه
     }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleSend = async () => {
@@ -161,8 +172,10 @@ export const RecordButton = () => {
 
       {isRecording && (
         <div className="text-center">
-          <p className="text-sm text-red-500 font-medium">⚫ Recording... (tap to stop or wait 15s)</p>
-          <p className="text-xs text-gray-400 mt-1">⏱️ Auto-stop in 15 seconds</p>
+          <p className="text-sm text-red-500 font-medium">⚫ Recording... (tap to stop)</p>
+          <p className="text-xs text-gray-400 mt-1">
+            ⏱️ {formatTime(recordingTime)} / max 2:00
+          </p>
         </div>
       )}
 

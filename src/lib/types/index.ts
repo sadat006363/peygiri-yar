@@ -5,8 +5,8 @@ export type CorrectionStatus = 'none' | 'ai_corrected' | 'user_corrected';
 
 export interface Item {
   id?: number;
-  rawText: string;          // ✅ متن اصلی از Whisper
-  correctedText?: string;   // ✅ متن اصلاح‌شده توسط AI یا کاربر
+  rawText: string;
+  correctedText?: string;
   category: Category;
   title: string;
   description: string;
@@ -15,14 +15,25 @@ export interface Item {
   dueDate?: string;
   createdAt: Date;
   updatedAt: Date;
-  // فیلدهای جدید برای اصلاح
-  correctionStatus?: CorrectionStatus;  // وضعیت اصلاح
-  confidence?: number;                  // سطح اطمینان (۰ تا ۱)
-  rawTranscript?: string;               // متن خام Whisper (برای نمایش به کاربر)
-  correctedTranscript?: string;         // متن اصلاح‌شده
+  // فیلدهای اصلاح
+  correctionStatus?: CorrectionStatus;
+  confidence?: number;
+  rawTranscript?: string;
+  correctedTranscript?: string;
   // فیلدهای قبلی
   followUpCondition?: string | null;
   followUpDate?: string | null;
   project?: string | null;
   tags?: string[];
+}
+
+// ✅ جدید: حافظه‌ی اصلاحات
+export interface CorrectionMemory {
+  id?: number;
+  originalText: string;    // کلمه/عبارت اشتباه
+  correctedText: string;   // کلمه/عبارت اصلاح‌شده
+  userId?: string;         // برای آینده (وقتی احراز هویت اضافه شد)
+  usageCount: number;      // تعداد دفعات استفاده
+  lastUsed: Date;
+  createdAt: Date;
 }

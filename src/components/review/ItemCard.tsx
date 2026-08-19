@@ -88,15 +88,49 @@ export const ItemCard = ({ item }: { item: Item }) => {
     }
   };
 
+  // ✅ ذخیره اصلاحات در حافظه
+  const saveToCorrectionMemory = async (original: string, corrected: string) => {
+    if (original.trim() === corrected.trim()) return;
+    
+    try {
+      const res = await fetch('/api/correction-memory/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          original: original.trim(),
+          corrected: corrected.trim(),
+        }),
+      });
+      
+      if (res.ok) {
+        console.log('✅ اصلاحات در حافظه ذخیره شد.');
+      } else {
+        console.warn('⚠️ خطا در ذخیره اصلاحات در حافظه.');
+      }
+    } catch (error) {
+      console.warn('⚠️ خطا در ذخیره اصلاحات:', error);
+    }
+  };
+
   const handleSaveEdit = async () => {
     if (item.id) {
+      // قبل از ذخیره، اصلاحات را در حافظه ذخیره کن
+      if (item.description !== editDesc) {
+        await saveToCorrectionMemory(item.description, editDesc);
+      }
+      if (item.title !== editTitle) {
+        await saveToCorrectionMemory(item.title, editTitle);
+      }
+
       await updateItem(item.id, {
         title: editTitle,
         description: editDesc,
         priority: editPriority,
         dueDate: editDueDate || undefined,
       });
+      
       setIsEditing(false);
+      alert('✅ Item updated and corrections saved to memory.');
     }
   };
 
@@ -104,7 +138,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
     <>
       <Card className="transition-all hover:border-indigo-200">
         <div className="flex flex-col gap-2">
-          {/* برچسب‌ها: دسته + اولویت + وضعیت */}
           <div className="flex flex-wrap justify-between items-start gap-2">
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${categoryColors[item.category]}`}>
               {categoryLabels[item.category] || item.category}
@@ -120,7 +153,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
           <h4 className="font-bold text-gray-800 text-lg">{item.title}</h4>
           <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
 
-          {/* نمایش اصلاحات (اگر وجود داشته باشد) */}
           {item.rawTranscript && item.correctedTranscript && item.rawTranscript !== item.correctedTranscript && (
             <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-xs text-gray-500">🗣️ Original: {item.rawTranscript}</p>
@@ -158,7 +190,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
             </span>
           </div>
 
-          {/* دکمه‌های عملیاتی بر اساس وضعیت */}
           {item.status === 'pending' && (
             <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100">
               <Button variant="success" size="sm" onClick={handleApprove}>✔ Approve</Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRecorder } from '@/hooks/useRecorder';
 import { useItemStore } from '@/stores/itemStore';
 import { Button } from '../ui/Button';
@@ -9,28 +9,46 @@ export const RecordButton = () => {
   const { isRecording, audioBlob, startRecording, stopRecording, resetAudio } = useRecorder();
   const [isProcessing, setIsProcessing] = useState(false);
   const { addItem } = useItemStore();
+  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
 
   console.log('🔄 RecordButton رندر شد.');
   console.log(`📊 وضعیت isRecording: ${isRecording}`);
   console.log(`📊 وضعیت audioBlob: ${audioBlob ? `${audioBlob.size} بایت` : 'خالی'}`);
   console.log(`📊 وضعیت isProcessing: ${isProcessing}`);
 
-  const handleStart = () => {
-    console.log('🎤 دکمه START کلیک شد.');
-    startRecording();
-    
-    // تایمر خودکار برای توقف بعد از 15 ثانیه (برای تست)
-    setTimeout(() => {
-      if (isRecording) {
-        console.log('⏰ تایمر خودکار: توقف ضبط...');
-        stopRecording();
-      }
-    }, 15000);
-  };
+  // پاک کردن تایمر هنگام unmount
+  useEffect(() => {
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [timer]);
 
-  const handleStop = () => {
-    console.log('⏹ دکمه STOP کلیک شد.');
-    stopRecording();
+  const handleClick = () => {
+    console.log('🖱️ دکمه کلیک شد.');
+    console.log(`📊 isRecording فعلی: ${isRecording}`);
+
+    if (isRecording) {
+      console.log('⏹ درخواست توقف ضبط (دستی)...');
+      if (timer) {
+        clearTimeout(timer);
+        setTimer(null);
+      }
+      stopRecording();
+    } else {
+      console.log('🎤 درخواست شروع ضبط...');
+      startRecording();
+
+      // ⏰ تایمر خودکار برای توقف بعد از 15 ثانیه
+      const newTimer = setTimeout(() => {
+        console.log('⏰ تایمر خودکار: توقف ضبط...');
+        if (isRecording) {
+          stopRecording();
+        }
+        setTimer(null);
+      }, 15000);
+
+      setTimer(newTimer);
+    }
   };
 
   const handleSend = async () => {
@@ -113,27 +131,30 @@ export const RecordButton = () => {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Record / Stop Buttons */}
-      <div className="flex items-center gap-4">
+      {/* Record Button */}
+      <div className="relative">
         <button
-          onClick={handleStart}
-          disabled={isProcessing || isRecording}
-          className="w-20 h-20 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-4xl shadow-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={handleClick}
+          disabled={isProcessing}
+          className={`w-24 h-24 rounded-full text-white text-4xl shadow-xl transition-all duration-300 ${
+            isRecording
+              ? 'bg-gradient-to-r from-red-500 to-pink-500 animate-pulse ring-4 ring-red-300'
+              : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 hover:shadow-2xl'
+          }`}
         >
-          🎙
+          {isRecording ? '⏹' : '🎙'}
         </button>
 
-        <button
-          onClick={handleStop}
-          disabled={isProcessing || !isRecording}
-          className="w-20 h-20 rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white text-4xl shadow-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse ring-4 ring-red-300"
-        >
-          ⏹
-        </button>
+        {isRecording && (
+          <div className="absolute -inset-2 rounded-full border-4 border-red-300/50 animate-ping"></div>
+        )}
       </div>
 
       {isRecording && (
-        <p className="text-sm text-red-500 font-medium">⚫ Recording... (use STOP button)</p>
+        <div className="text-center">
+          <p className="text-sm text-red-500 font-medium">⚫ Recording... (tap to stop or wait 15s)</p>
+          <p className="text-xs text-gray-400 mt-1">⏱️ Auto-stop in 15 seconds</p>
+        </div>
       )}
 
       {/* Action Buttons after recording */}

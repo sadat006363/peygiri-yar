@@ -47,11 +47,11 @@ export const scheduleNotification = (item: Item) => {
   }
 };
 
-// لغو همه‌ی نوتیفیکیشن‌ها (در صورت نیاز)
+// ✅ لغو همه‌ی نوتیفیکیشن‌ها (با forEach به جای for...of)
 export const clearAllNotifications = () => {
-  for (const [id, timer] of timers) {
+  timers.forEach((timer, id) => {
     clearTimeout(timer);
     timers.delete(id);
-  }
+  });
   console.log('🧹 همه‌ی نوتیفیکیشن‌ها لغو شدند.');
 };

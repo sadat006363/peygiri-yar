@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRecorder } from '@/hooks/useRecorder';
 import { useItemStore } from '@/stores/itemStore';
-import { Button } from '../ui/Button';
 
 export const RecordButton = () => {
   const { isRecording, audioBlob, startRecording, stopRecording, resetAudio, isRecordingRef } = useRecorder();
@@ -12,7 +11,7 @@ export const RecordButton = () => {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const timeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isProcessingRef = useRef(false); // ✅ برای جلوگیری از اجرای هم‌زمان
+  const isProcessingRef = useRef(false);
 
   // پاک کردن تایمرها هنگام unmount
   useEffect(() => {
@@ -37,17 +36,16 @@ export const RecordButton = () => {
     }
   }, [isRecording]);
 
-  // ✅ پردازش خودکار بعد از توقف ضبط
+  // پردازش خودکار بعد از توقف ضبط
   useEffect(() => {
-    // اگر ضبط متوقف شده، فایل صوتی وجود دارد، و در حال پردازش نیستیم
     if (!isRecording && audioBlob && !isProcessingRef.current) {
       console.log('🔄 پردازش خودکار شروع شد...');
       isProcessingRef.current = true;
       handleSend();
     }
+    // وابستگی‌ها: isRecording, audioBlob
   }, [isRecording, audioBlob]);
 
-  // تابع handleClick برای شروع/توقف ضبط
   const handleClick = async () => {
     console.log('🖱️ دکمه کلیک شد.');
     console.log(`📊 isRecording: ${isRecording}`);
@@ -90,7 +88,6 @@ export const RecordButton = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // تابع handleSend (با تغییرات جزئی برای مدیریت isProcessingRef)
   const handleSend = async () => {
     console.log('📤 handleSend فراخوانی شد.');
 
@@ -100,7 +97,6 @@ export const RecordButton = () => {
       return;
     }
 
-    // بررسی حجم فایل (کمتر از ۵۰۰۰ بایت = بدون صدا)
     if (audioBlob.size < 5000) {
       console.warn('⚠️ حجم فایل صوتی بسیار کم است.');
       alert('❌ No speech detected. Please record a voice message and try again.');
@@ -149,17 +145,18 @@ export const RecordButton = () => {
 
       const structuredData = await structureRes.json();
 
+      // ✅ ارسال priority و dueDate
       await addItem({
         rawText,
         category: structuredData.category || 'idea',
         title: structuredData.title || 'Untitled',
         description: structuredData.description || rawText,
+        priority: structuredData.priority || 'medium',
+        dueDate: structuredData.dueDate || null,
       });
 
       resetAudio();
       console.log('✅ آیتم با موفقیت ذخیره شد.');
-      // پیام موفقیت (اختیاری - می‌توانید حذف کنید)
-      // alert('✅ Item saved. Please review in Pending Approval.');
 
     } catch (error: any) {
       console.error('❌ خطا:', error);
@@ -203,8 +200,6 @@ export const RecordButton = () => {
           </p>
         </div>
       )}
-
-      {/* ❌ دکمه‌های Save و Cancel حذف شدند */}
     </div>
   );
 };

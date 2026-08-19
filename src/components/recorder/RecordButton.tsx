@@ -34,33 +34,41 @@ export const RecordButton = () => {
     }
   }, [isRecording]);
 
+  // ✅ تابع ساده و مطمئن برای کلیک روی دکمه
   const handleClick = () => {
     console.log('🖱️ دکمه کلیک شد.');
-    console.log(`📊 isRecording فعلی: ${isRecording}`);
-    console.log(`📊 isRecordingRef فعلی: ${isRecordingRef.current}`);
+    console.log(`📊 isRecording: ${isRecording}`);
+    console.log(`📊 isRecordingRef: ${isRecordingRef.current}`);
 
+    // اگر در حال ضبط است، متوقف کن
     if (isRecording || isRecordingRef.current) {
       console.log('⏹ درخواست توقف ضبط (دستی)...');
+      // لغو تایمر ایمنی
       if (timerRef.current) {
-        console.log('🧹 لغو تایمر خودکار');
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
+      // توقف ضبط
       stopRecording();
+      // بازخورد لمسی
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-    } else {
-      console.log('🎤 درخواست شروع ضبط...');
-      startRecording();
-      timerRef.current = setTimeout(() => {
-        console.log('⏰ تایمر ایمنی: در حال فراخوانی stopRecording...');
-        if (isRecordingRef.current) {
-          stopRecording();
-        }
-        timerRef.current = null;
-      }, 120000);
+      return; // مهم: بعد از توقف، ادامه نده
     }
+
+    // در غیر این صورت، شروع به ضبط کن
+    console.log('🎤 درخواست شروع ضبط...');
+    startRecording();
+
+    // تنظیم تایمر ایمنی ۲ دقیقه‌ای
+    timerRef.current = setTimeout(() => {
+      console.log('⏰ تایمر ایمنی: توقف ضبط...');
+      if (isRecordingRef.current) {
+        stopRecording();
+      }
+      timerRef.current = null;
+    }, 120000);
   };
 
   const formatTime = (seconds: number) => {
@@ -71,26 +79,23 @@ export const RecordButton = () => {
 
   const handleSend = async () => {
     console.log('📤 دکمه "Save" کلیک شد.');
-    console.log(`📊 audioBlob: ${audioBlob ? `${audioBlob.size} بایت` : 'خالی'}`);
 
     if (!audioBlob) {
       console.warn('⚠️ audioBlob خالی است.');
       return;
     }
 
-    // ✅ بررسی حجم فایل - اگر کمتر از ۵۰۰۰ بایت باشد، یعنی صدایی ضبط نشده
+    // بررسی حجم فایل (کمتر از ۵۰۰۰ بایت = بدون صدا)
     if (audioBlob.size < 5000) {
-      console.warn('⚠️ حجم فایل صوتی بسیار کم است. احتمالاً صدایی ضبط نشده.');
+      console.warn('⚠️ حجم فایل صوتی بسیار کم است.');
       alert('❌ No speech detected. Please record a voice message and try again.');
       resetAudio();
       return;
     }
 
     setIsProcessing(true);
-    console.log('⏳ isProcessing = true');
 
     try {
-      console.log('📤 ارسال فایل صوتی به /api/transcribe...');
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
 
@@ -99,49 +104,34 @@ export const RecordButton = () => {
         body: formData,
       });
 
-      console.log(`📥 پاسخ از /api/transcribe: status ${transcribeRes.status}`);
-
       if (!transcribeRes.ok) {
         const errorText = await transcribeRes.text();
-        console.error('❌ خطا در transcribe:', errorText);
         throw new Error(errorText || 'Transcription failed');
       }
 
       const transcribeData = await transcribeRes.json();
-      console.log('✅ متن تبدیل‌شده:', transcribeData.text);
-
       const rawText = transcribeData.text;
 
-      // ✅ اگر متن تبدیل‌شده خیلی کوتاه یا بیمعنی بود، خطا بده
       if (rawText.trim().length < 2) {
-        console.warn('⚠️ متن تبدیل‌شده بسیار کوتاه است.');
         alert('❌ No clear speech detected. Please speak clearly and try again.');
         resetAudio();
         setIsProcessing(false);
         return;
       }
 
-      console.log('📤 ارسال متن به /api/structure...');
       const structureRes = await fetch('/api/structure', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: rawText }),
       });
 
-      console.log(`📥 پاسخ از /api/structure: status ${structureRes.status}`);
-
       if (!structureRes.ok) {
         const errorText = await structureRes.text();
-        console.error('❌ خطا در structure:', errorText);
         throw new Error(errorText || 'Structuring failed');
       }
 
       const structuredData = await structureRes.json();
-      console.log('✅ داده ساختاردهی‌شده:', structuredData);
 
-      console.log('💾 ذخیره آیتم در دیتابیس...');
       await addItem({
         rawText,
         category: structuredData.category || 'idea',
@@ -149,18 +139,14 @@ export const RecordButton = () => {
         description: structuredData.description || rawText,
       });
 
-      console.log('✅ آیتم با موفقیت ذخیره شد.');
       resetAudio();
-      console.log('🔄 فایل صوتی پاک شد.');
-
       alert('✅ Item successfully saved. Please review it in the "Pending Approval" section.');
 
     } catch (error: any) {
-      console.error('❌ خطا در فرآیند ذخیره‌سازی:', error);
+      console.error('❌ خطا:', error);
       alert('❌ Error: ' + (error.message || 'Something went wrong'));
     } finally {
       setIsProcessing(false);
-      console.log('⏳ isProcessing = false');
     }
   };
 

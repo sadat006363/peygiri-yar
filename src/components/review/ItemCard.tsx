@@ -47,10 +47,11 @@ const statusColors: Record<string, string> = {
 export const ItemCard = ({ item }: { item: Item }) => {
   const { updateItem, deleteItem } = useItemStore();
   const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(item.title);
-  const [editDesc, setEditDesc] = useState(item.description);
+
+  // ✅ مقداردهی اولیه با ?? '' برای جلوگیری از null
+  const [editTitle, setEditTitle] = useState<string>(item.title ?? '');
+  const [editDesc, setEditDesc] = useState<string>(item.description ?? '');
   const [editPriority, setEditPriority] = useState<Priority>(item.priority);
-  // ✅ تبدیل null به رشته‌ی خالی برای input
   const [editDueDate, setEditDueDate] = useState<string>(item.dueDate ?? '');
 
   const handleApprove = async () => {
@@ -89,14 +90,14 @@ export const ItemCard = ({ item }: { item: Item }) => {
     }
   };
 
+  // ✅ اصلاح مهم: ارسال undefined به‌جای null
   const handleSaveEdit = async () => {
     if (item.id) {
       await updateItem(item.id, {
         title: editTitle,
         description: editDesc,
         priority: editPriority,
-        // ✅ تبدیل رشته‌ی خالی به null برای ذخیره‌سازی
-        dueDate: editDueDate || null,
+        dueDate: editDueDate || undefined, // ← تبدیل به undefined
       });
       setIsEditing(false);
     }
@@ -121,7 +122,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
           <h4 className="font-bold text-gray-800 text-lg">{item.title}</h4>
           <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
 
-          {/* ✅ نمایش dueDate با ?? undefined */}
           {item.dueDate && (
             <div className="text-xs text-gray-500">
               📅 Due: {new Date(item.dueDate).toLocaleDateString('en-US')}
@@ -194,7 +194,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
           <option value="medium">🟡 Medium</option>
           <option value="low">🔵 Low</option>
         </select>
-        {/* ✅ استفاده از ?? '' برای input date */}
         <input
           type="date"
           value={editDueDate}

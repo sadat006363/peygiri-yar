@@ -23,9 +23,15 @@ export const useRecorder = () => {
         return;
       }
 
-      // ✅ تنظیمات پیش‌فرض برای تست کیفیت بهتر
+      // ✅ تنظیمات بهینه برای تشخیص گفتار
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 16000,
+          channelCount: 1,
+        },
       });
 
       console.log('✅ دسترسی به میکروفون گرفته شد.');
@@ -34,7 +40,6 @@ export const useRecorder = () => {
       setAudioBlob(null);
       chunksRef.current = [];
 
-      // ✅ اولویت: WebM/Opus → WebM → MP4
       let options: MediaRecorderOptions = {};
       if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
         options = { mimeType: 'audio/webm;codecs=opus' };

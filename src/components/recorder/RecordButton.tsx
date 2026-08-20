@@ -92,21 +92,10 @@ export const RecordButton = () => {
     return 'bg-red-500';
   };
 
-  // ✅ تشخیص متن معنی‌دار (برای متن‌های انگلیسی و فارسی)
-  const isValidText = (text: string): boolean => {
-    const trimmed = text.trim();
-    if (trimmed.length < 3) return false;
-    if (/^[\d\s\W_]+$/.test(trimmed)) return false;
-    const words = trimmed.split(/\s+/).filter(w => w.length > 1);
-    if (words.length < 2) return false;
-    return true;
-  };
-
-  // ✅ تشخیص نویز و جملات پیش‌فرض Whisper
+  // ✅ تشخیص نویز و جملات پیش‌فرض
   const isNoise = (text: string): boolean => {
     const trimmed = text.trim().toLowerCase();
-
-    // ✅ لیست جملات پیش‌فرض و بی‌معنی
+    if (trimmed.length < 5) return true;
     const noisePhrases = [
       'thank you for watching',
       'thanks for watching',
@@ -116,32 +105,10 @@ export const RecordButton = () => {
       'testing',
       'speak clearly',
       'please speak',
-      'can you hear me',
-      'can you speak up',
     ];
-
-    // اگر جمله خیلی کوتاه باشد
-    if (trimmed.length < 5) return true;
-
-    // بررسی جملات پیش‌فرض
     for (const phrase of noisePhrases) {
-      if (trimmed.includes(phrase)) {
-        return true;
-      }
+      if (trimmed.includes(phrase)) return true;
     }
-
-    // کلمات تکراری بی‌معنی (مثل "سلام سلام سلام")
-    const words = trimmed.split(/\s+/).filter(w => w.length > 0);
-    if (words.length === 0) return true;
-
-    const uniqueWords = new Set(words);
-    if (uniqueWords.size === 1 && words.length >= 3) {
-      const word = words[0];
-      if (word.length > 2 && word.split('').every((c, i, arr) => c === arr[0])) {
-        return true;
-      }
-    }
-
     return false;
   };
 
@@ -155,6 +122,7 @@ export const RecordButton = () => {
     }
 
     console.log(`📊 حجم فایل صوتی: ${audioBlob.size} بایت`);
+    console.log(`📊 نوع فایل (MIME): ${audioBlob.type}`);
 
     if (audioBlob.size < 4000) {
       console.warn('⚠️ حجم فایل صوتی بسیار کم است (احتمالاً نویز).');
@@ -197,7 +165,6 @@ export const RecordButton = () => {
       const rawText = transcribeData.text || '';
       const noSpeechProb = transcribeData.no_speech_prob;
 
-      // ✅ اگر noSpeechProb بالا باشد یا متن خالی باشد، ذخیره نکن
       if (noSpeechProb !== undefined && noSpeechProb > 0.8) {
         console.warn(`⚠️ تشخیص گفتار ضعیف: noSpeechProb=${noSpeechProb}`);
         alert('❌ We received audio but couldn\'t understand speech. Please try again speaking more clearly.');
@@ -207,7 +174,6 @@ export const RecordButton = () => {
         return;
       }
 
-      // ✅ اگر متن خالی باشد یا نویز تشخیص داده شود، ذخیره نکن
       if (rawText.trim().length === 0 || isNoise(rawText)) {
         console.warn('⚠️ متن خالی یا نویز است:', rawText);
         alert('❌ No clear speech detected. Please speak clearly and try again.');
@@ -219,88 +185,11 @@ export const RecordButton = () => {
 
       console.log('✅ متن خام از Whisper:', rawText);
 
-      if (!isValidText(rawText)) {
-        console.warn('⚠️ متن معنی‌دار نیست:', rawText);
-        alert('❌ No clear speech detected. Please speak clearly and try again.');
-        resetAudio();
-        setIsProcessing(false);
-        isProcessingRef.current = false;
-        return;
-      }
-
-      console.log('📊 دریافت اصلاحات پرکاربرد...');
-      let userCorrections: any[] = [];
-      try {
-        const memoryRes = await fetch('/api/correction-memory/most-used?limit=20');
-        if (memoryRes.ok) {
-          const memoryData = await memoryRes.json();
-          userCorrections = memoryData.data || [];
-          console.log(`✅ ${userCorrections.length} اصلاحات پرکاربرد دریافت شد.`);
-        }
-      } catch (error: any) {
-        console.warn('⚠️ خطا در دریافت اصلاحات پرکاربرد:', error.message);
-      }
-
-      console.log('📤 مرحله 2: ارسال متن به /api/correct برای اصلاح...');
-      
-      const correctionPayload = {
-        text: rawText,
-        knownPeople: ['علی رضایی', 'رضا موسوی', 'سارا احمدی'],
-        knownProjects: ['PromptYar', 'Zbloue', 'Direct2Chat'],
-        knownTerms: ['Whisper', 'Next.js', 'Supabase'],
-        userCorrections: userCorrections.map((c: any) => ({
-          original: c.originalText,
-          corrected: c.correctedText,
-        })),
-      };
-
-      let correctedText = rawText;
-      let correctionChanges: any[] = [];
-      let confidence = 1.0;
-
-      try {
-        const correctRes = await fetch('/api/correct', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(correctionPayload),
-        });
-
-        console.log(`📥 پاسخ /api/correct: status ${correctRes.status}`);
-
-        if (correctRes.ok) {
-          const correctData = await correctRes.json();
-          console.log('✅ داده‌های اصلاح‌شده:', correctData);
-
-          correctedText = correctData.correctedText || rawText;
-          correctionChanges = correctData.changes || [];
-          
-          if (correctionChanges.length > 0) {
-            const totalConfidence = correctionChanges.reduce((sum: number, c: any) => sum + (c.confidence || 0.5), 0);
-            confidence = Math.min(totalConfidence / correctionChanges.length, 1.0);
-          }
-          
-          console.log('✅ متن اصلاح‌شده نهایی:', correctedText);
-          console.log(`📊 تعداد اصلاحات: ${correctionChanges.length}`);
-          console.log(`📊 اطمینان متوسط: ${confidence.toFixed(2)}`);
-        }
-      } catch (error: any) {
-        console.warn('⚠️ خطا در فراخوانی correction API:', error.message);
-      }
-
-      if (!isValidText(correctedText) || isNoise(correctedText)) {
-        console.warn('⚠️ متن اصلاح‌شده نیز معنی‌دار نیست یا نویز است:', correctedText);
-        alert('❌ No clear speech detected. Please speak clearly and try again.');
-        resetAudio();
-        setIsProcessing(false);
-        isProcessingRef.current = false;
-        return;
-      }
-
-      console.log('📤 مرحله 3: ارسال متن به /api/structure...');
+      console.log('📤 مرحله 2: ارسال متن به /api/structure...');
       const structureRes = await fetch('/api/structure', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: correctedText }),
+        body: JSON.stringify({ text: rawText }),
       });
 
       console.log(`📥 پاسخ /api/structure: status ${structureRes.status}`);
@@ -314,17 +203,17 @@ export const RecordButton = () => {
       const structuredData = await structureRes.json();
       console.log('✅ داده ساختاردهی‌شده:', structuredData);
 
-      console.log('📤 مرحله 4: ذخیره آیتم در دیتابیس...');
+      console.log('📤 مرحله 3: ذخیره آیتم در دیتابیس...');
       const savedId = await addItem({
         rawText: rawText,
-        correctedText: correctedText,
+        correctedText: rawText,
         rawTranscript: rawText,
-        correctedTranscript: correctedText,
-        correctionStatus: correctionChanges.length > 0 ? 'ai_corrected' : 'none',
-        confidence: confidence,
+        correctedTranscript: rawText,
+        correctionStatus: 'none',
+        confidence: 1.0,
         category: structuredData.category || 'idea',
         title: structuredData.title || 'Untitled',
-        description: structuredData.description || correctedText,
+        description: structuredData.description || rawText,
         priority: structuredData.priority || 'medium',
         dueDate: structuredData.dueDate || null,
       });

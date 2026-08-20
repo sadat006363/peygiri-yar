@@ -23,13 +23,13 @@ export const useRecorder = () => {
         return;
       }
 
-      // ✅ تنظیمات بهینه برای تشخیص گفتار
+      // ✅ تنظیمات بهینه با نرخ نمونه‌برداری بالاتر
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          sampleRate: 16000,
+          sampleRate: 44100, // ← افزایش کیفیت
           channelCount: 1,
         },
       });
@@ -40,16 +40,17 @@ export const useRecorder = () => {
       setAudioBlob(null);
       chunksRef.current = [];
 
+      // ✅ اولویت فرمت‌ها: MP4 اول (برای تست)
       let options: MediaRecorderOptions = {};
-      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+      if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        options = { mimeType: 'audio/mp4' };
+        console.log('📀 فرمت انتخاب شده: audio/mp4');
+      } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
         options = { mimeType: 'audio/webm;codecs=opus' };
         console.log('📀 فرمت انتخاب شده: audio/webm;codecs=opus');
       } else if (MediaRecorder.isTypeSupported('audio/webm')) {
         options = { mimeType: 'audio/webm' };
         console.log('📀 فرمت انتخاب شده: audio/webm');
-      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-        options = { mimeType: 'audio/mp4' };
-        console.log('📀 فرمت انتخاب شده: audio/mp4');
       } else {
         console.warn('⚠️ هیچ فرمت پشتیبانی‌شده‌ای پیدا نشد.');
         options = {};

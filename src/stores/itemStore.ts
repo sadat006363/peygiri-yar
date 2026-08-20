@@ -24,27 +24,48 @@ export const useItemStore = create<ItemState>((set, get) => ({
   rejectedItems: [],
 
   fetchItems: async () => {
+    console.log('📊 fetchItems شروع شد.');
     set({ isLoading: true });
-    const allItems = await itemRepository.getAll();
-    const sorted = allItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    set({
-      items: sorted,
-      pendingItems: sorted.filter(i => i.status === 'pending'),
-      activeItems: sorted.filter(i => i.status === 'active'),
-      completedItems: sorted.filter(i => i.status === 'completed'),
-      rejectedItems: sorted.filter(i => i.status === 'rejected'),
-      isLoading: false,
-    });
+    try {
+      const allItems = await itemRepository.getAll();
+      console.log('📊 همه‌ی آیتم‌ها:', allItems.map(i => ({
+        id: i.id,
+        status: i.status,
+        title: i.title,
+        dueDate: i.dueDate,
+      })));
+
+      const sorted = allItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+      const pending = sorted.filter(i => i.status === 'pending');
+      const active = sorted.filter(i => i.status === 'active');
+      const completed = sorted.filter(i => i.status === 'completed');
+      const rejected = sorted.filter(i => i.status === 'rejected');
+
+      console.log(`📊 آمار: pending=${pending.length}, active=${active.length}, completed=${completed.length}, rejected=${rejected.length}`);
+
+      set({
+        items: sorted,
+        pendingItems: pending,
+        activeItems: active,
+        completedItems: completed,
+        rejectedItems: rejected,
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error('❌ خطا در fetchItems:', error);
+      set({ isLoading: false });
+    }
   },
 
   addItem: async (item: Omit<Item, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
+    console.log('📤 addItem فراخوانی شد:', item);
     const now = new Date();
     const newItem: Omit<Item, 'id'> = {
       ...item,
       status: 'pending',
       createdAt: now,
       updatedAt: now,
-      // فیلدهای جدید با مقدار پیش‌فرض مناسب
       rawTranscript: item.rawTranscript || item.rawText,
       correctedTranscript: item.correctedTranscript || item.rawText,
       correctionStatus: item.correctionStatus || 'none',
@@ -55,15 +76,23 @@ export const useItemStore = create<ItemState>((set, get) => ({
       tags: item.tags || [],
     };
     await itemRepository.add(newItem);
+    console.log('✅ آیتم اضافه شد، در حال fetch مجدد...');
     await get().fetchItems();
   },
 
   updateItem: async (id, updates) => {
-    await itemRepository.update(id, updates);
-    await get().fetchItems();
+    console.log(`📤 updateItem فراخوانی شد: id=${id}, updates=`, updates);
+    try {
+      await itemRepository.update(id, updates);
+      console.log('✅ آیتم به‌روزرسانی شد، در حال fetch مجدد...');
+      await get().fetchItems();
+    } catch (error) {
+      console.error('❌ خطا در updateItem:', error);
+    }
   },
 
   deleteItem: async (id) => {
+    console.log(`📤 deleteItem فراخوانی شد: id=${id}`);
     await itemRepository.delete(id);
     await get().fetchItems();
   },

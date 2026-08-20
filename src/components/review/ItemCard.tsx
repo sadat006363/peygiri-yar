@@ -52,19 +52,39 @@ export const ItemCard = ({ item }: { item: Item }) => {
   const [editPriority, setEditPriority] = useState<Priority>(item.priority);
   const [editDueDate, setEditDueDate] = useState<string>(item.dueDate ?? '');
 
+  // ✅ دیباگ: تابع Approve با لاگ کامل
   const handleApprove = async () => {
-    if (item.id) {
+    console.log('🟢 دکمه Approve کلیک شد.');
+    console.log('📊 آیتم مورد نظر:', {
+      id: item.id,
+      title: item.title,
+      status: item.status,
+      dueDate: item.dueDate,
+    });
+
+    if (!item.id) {
+      console.error('❌ آیتم ID ندارد!');
+      return;
+    }
+
+    try {
+      console.log('📤 در حال به‌روزرسانی وضعیت به active...');
       await updateItem(item.id, { status: 'active' });
+      console.log('✅ وضعیت به active تغییر کرد.');
+    } catch (error) {
+      console.error('❌ خطا در به‌روزرسانی:', error);
     }
   };
 
   const handleReject = async () => {
+    console.log('🔴 دکمه Reject کلیک شد.');
     if (item.id) {
       await updateItem(item.id, { status: 'rejected' });
     }
   };
 
   const handleComplete = async () => {
+    console.log('🟢 دکمه Complete کلیک شد.');
     if (item.id) {
       await updateItem(item.id, { status: 'completed' });
     }

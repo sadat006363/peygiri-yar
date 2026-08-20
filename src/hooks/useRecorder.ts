@@ -23,15 +23,9 @@ export const useRecorder = () => {
         return;
       }
 
-      // ✅ خاموش کردن پردازش‌های خودکار مرورگر برای کیفیت بهتر گفتار
+      // ✅ تنظیمات پیش‌فرض برای تست کیفیت بهتر
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: 16000,
-          channelCount: 1,
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        }
+        audio: true,
       });
 
       console.log('✅ دسترسی به میکروفون گرفته شد.');
@@ -78,11 +72,9 @@ export const useRecorder = () => {
           return;
         }
 
-        // ✅ استفاده از mimeType واقعی MediaRecorder
         const mimeType = mediaRecorder.mimeType || 'audio/webm';
         const blob = new Blob(chunksRef.current, { type: mimeType });
 
-        // ✅ لاگ نهایی blob
         console.log('📊 اطلاعات نهایی Blob:', {
           size: blob.size,
           type: blob.type,

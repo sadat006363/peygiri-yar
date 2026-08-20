@@ -5,13 +5,14 @@ import { useItemStore } from '@/stores/itemStore';
 import { ItemCard } from '../review/ItemCard';
 
 export const HistoryList = () => {
-  const { completedItems, rejectedItems, fetchItems, isLoading } = useItemStore();
+  const { items, fetchItems, isLoading } = useItemStore();
 
   useEffect(() => {
     fetchItems();
   }, []);
 
-  const historyItems = [...completedItems, ...rejectedItems].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  // همه‌ی آیتم‌ها به جز pending
+  const historyItems = items.filter(i => i.status !== 'pending');
 
   if (isLoading) return <p className="text-gray-400 text-center py-4">Loading...</p>;
 

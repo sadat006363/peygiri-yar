@@ -52,27 +52,10 @@ export const ItemCard = ({ item }: { item: Item }) => {
   const [editPriority, setEditPriority] = useState<Priority>(item.priority);
   const [editDueDate, setEditDueDate] = useState<string>(item.dueDate ?? '');
 
-  // ✅ دیباگ: تابع Approve با لاگ کامل
   const handleApprove = async () => {
     console.log('🟢 دکمه Approve کلیک شد.');
-    console.log('📊 آیتم مورد نظر:', {
-      id: item.id,
-      title: item.title,
-      status: item.status,
-      dueDate: item.dueDate,
-    });
-
-    if (!item.id) {
-      console.error('❌ آیتم ID ندارد!');
-      return;
-    }
-
-    try {
-      console.log('📤 در حال به‌روزرسانی وضعیت به active...');
+    if (item.id) {
       await updateItem(item.id, { status: 'active' });
-      console.log('✅ وضعیت به active تغییر کرد.');
-    } catch (error) {
-      console.error('❌ خطا در به‌روزرسانی:', error);
     }
   };
 
@@ -84,7 +67,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
   };
 
   const handleComplete = async () => {
-    console.log('🟢 دکمه Complete کلیک شد.');
+    console.log('✅ دکمه Complete کلیک شد.');
     if (item.id) {
       await updateItem(item.id, { status: 'completed' });
     }
@@ -234,6 +217,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
             </div>
           )}
 
+          {/* دکمه‌های عملیاتی بر اساس وضعیت */}
           {item.status === 'pending' && (
             <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100">
               <Button variant="success" size="sm" onClick={handleApprove}>✔ Approve</Button>

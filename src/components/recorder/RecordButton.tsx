@@ -92,7 +92,7 @@ export const RecordButton = () => {
     return 'bg-red-500';
   };
 
-  // ✅ اعتبارسنجی قوی‌تر متن
+  // ✅ تشخیص متن معنی‌دار (برای متن‌های انگلیسی و فارسی)
   const isValidText = (text: string): boolean => {
     const trimmed = text.trim();
     if (trimmed.length < 3) return false;
@@ -102,22 +102,46 @@ export const RecordButton = () => {
     return true;
   };
 
-  // ✅ تشخیص نویز
+  // ✅ تشخیص نویز و جملات پیش‌فرض Whisper
   const isNoise = (text: string): boolean => {
-    const trimmed = text.trim();
+    const trimmed = text.trim().toLowerCase();
+
+    // ✅ لیست جملات پیش‌فرض و بی‌معنی
+    const noisePhrases = [
+      'thank you for watching',
+      'thanks for watching',
+      'hello',
+      'hi',
+      'test',
+      'testing',
+      'speak clearly',
+      'please speak',
+      'can you hear me',
+      'can you speak up',
+    ];
+
+    // اگر جمله خیلی کوتاه باشد
     if (trimmed.length < 5) return true;
-    const words = trimmed.split(/\s+/).filter(w => w.length > 0);
-    if (words.length === 0) return true;
-    const uniqueWords = new Set(words);
-    if (uniqueWords.size === 1 && words.length >= 3) {
-      return true;
-    }
-    if (words.length <= 3 && trimmed.length < 20) {
-      const noisePhrases = ['thank you for watching', 'thanks for watching', 'hello', 'hi', 'test', 'testing'];
-      if (noisePhrases.some(phrase => trimmed.toLowerCase().includes(phrase))) {
+
+    // بررسی جملات پیش‌فرض
+    for (const phrase of noisePhrases) {
+      if (trimmed.includes(phrase)) {
         return true;
       }
     }
+
+    // کلمات تکراری بی‌معنی (مثل "سلام سلام سلام")
+    const words = trimmed.split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) return true;
+
+    const uniqueWords = new Set(words);
+    if (uniqueWords.size === 1 && words.length >= 3) {
+      const word = words[0];
+      if (word.length > 2 && word.split('').every((c, i, arr) => c === arr[0])) {
+        return true;
+      }
+    }
+
     return false;
   };
 
@@ -171,12 +195,22 @@ export const RecordButton = () => {
       });
 
       const rawText = transcribeData.text || '';
-      const noSpeechProb = transcribeData.no_speech_prob || 0;
+      const noSpeechProb = transcribeData.no_speech_prob;
 
       // ✅ اگر noSpeechProb بالا باشد یا متن خالی باشد، ذخیره نکن
-      if (noSpeechProb > 0.8 || rawText.trim().length === 0) {
-        console.warn(`⚠️ تشخیص گفتار ضعیف: noSpeechProb=${noSpeechProb}, text="${rawText}"`);
+      if (noSpeechProb !== undefined && noSpeechProb > 0.8) {
+        console.warn(`⚠️ تشخیص گفتار ضعیف: noSpeechProb=${noSpeechProb}`);
         alert('❌ We received audio but couldn\'t understand speech. Please try again speaking more clearly.');
+        resetAudio();
+        setIsProcessing(false);
+        isProcessingRef.current = false;
+        return;
+      }
+
+      // ✅ اگر متن خالی باشد یا نویز تشخیص داده شود، ذخیره نکن
+      if (rawText.trim().length === 0 || isNoise(rawText)) {
+        console.warn('⚠️ متن خالی یا نویز است:', rawText);
+        alert('❌ No clear speech detected. Please speak clearly and try again.');
         resetAudio();
         setIsProcessing(false);
         isProcessingRef.current = false;
@@ -185,8 +219,8 @@ export const RecordButton = () => {
 
       console.log('✅ متن خام از Whisper:', rawText);
 
-      if (!isValidText(rawText) || isNoise(rawText)) {
-        console.warn('⚠️ متن تشخیص‌داده‌شده معنی‌دار نیست یا نویز است:', rawText);
+      if (!isValidText(rawText)) {
+        console.warn('⚠️ متن معنی‌دار نیست:', rawText);
         alert('❌ No clear speech detected. Please speak clearly and try again.');
         resetAudio();
         setIsProcessing(false);

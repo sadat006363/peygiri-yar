@@ -37,7 +37,6 @@ export const RecordButton = () => {
     }
   }, [isRecording]);
 
-  // ✅ ارسال خودکار فقط بعد از ساخته شدن Blob و توقف ضبط
   useEffect(() => {
     if (isRecording || !audioBlob || isProcessingRef.current) return;
 
@@ -67,7 +66,6 @@ export const RecordButton = () => {
     console.log('🎤 شروع ضبط...');
     await startRecording();
 
-    // ✅ تنظیم تایمر ۶۰ ثانیه‌ای بدون شرط اضافی
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -94,41 +92,27 @@ export const RecordButton = () => {
     return 'bg-red-500';
   };
 
-  // ✅ اعتبارسنجی قوی‌تر متن
+  // ✅ تشخیص متن معنی‌دار (ساده و قابل‌قبول)
   const isValidText = (text: string): boolean => {
     const trimmed = text.trim();
-    // حداقل ۳ کاراکتر
-    if (trimmed.length < 3) return false;
-    // فقط اعداد یا نمادها نباشد
+    if (trimmed.length < 2) return false;
     if (/^[\d\s\W_]+$/.test(trimmed)) return false;
     const words = trimmed.split(/\s+/).filter(w => w.length > 1);
-    // حداقل یک کلمه با طول > ۱
-    if (words.length < 1) return false;
-    // تشخیص کلمات تکراری بی‌معنی (مانند "سلام سلام سلام")
-    const uniqueWords = new Set(words);
-    if (uniqueWords.size === 1 && words.length >= 3) {
-      const word = words[0];
-      // اگر کلمه فارسی باشد و حروف تکراری داشته باشد
-      if (/^[\u0600-\u06FF]+$/.test(word)) {
-        const repeated = word.split('').every((c, i, arr) => c === arr[0]);
-        if (repeated) return false;
-      }
-      // اگر کلمه بی‌معنی باشد (مانند "خوب خوب خوب")
-      if (word.length < 2) return false;
-    }
-    return true;
+    return words.length >= 1;
   };
 
-  // ✅ تشخیص سکوت یا نویز
+  // ✅ تشخیص نویز (متن‌های تکراری بی‌معنی)
   const isNoise = (text: string): boolean => {
     const trimmed = text.trim();
-    if (trimmed.length < 3) return true;
-    const words = trimmed.split(/\s+/).filter(w => w.length > 1);
+    if (trimmed.length < 2) return true;
+    const words = trimmed.split(/\s+/).filter(w => w.length > 0);
     if (words.length === 0) return true;
-    // اگر همه کلمات یکسان باشند و تعدادشان زیاد باشد
     const uniqueWords = new Set(words);
-    if (uniqueWords.size === 1 && words.length > 2) {
-      return true;
+    if (uniqueWords.size === 1 && words.length >= 5) {
+      const word = words[0];
+      if (word.length > 2 && word.split('').every((c, i, arr) => c === arr[0])) {
+        return true;
+      }
     }
     return false;
   };
@@ -175,7 +159,6 @@ export const RecordButton = () => {
       const rawText = transcribeData.text;
       console.log('✅ متن خام از Whisper:', rawText);
 
-      // ✅ اعتبارسنجی قوی
       if (!isValidText(rawText) || isNoise(rawText)) {
         console.warn('⚠️ متن تشخیص‌داده‌شده معنی‌دار نیست یا نویز است:', rawText);
         alert('❌ No clear speech detected. Please speak clearly and try again.');
@@ -244,7 +227,6 @@ export const RecordButton = () => {
         console.warn('⚠️ خطا در فراخوانی correction API:', error.message);
       }
 
-      // ✅ بررسی مجدد متن اصلاح‌شده
       if (!isValidText(correctedText) || isNoise(correctedText)) {
         console.warn('⚠️ متن اصلاح‌شده نیز معنی‌دار نیست یا نویز است:', correctedText);
         alert('❌ No clear speech detected. Please speak clearly and try again.');

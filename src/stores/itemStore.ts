@@ -10,7 +10,7 @@ interface ItemState {
   completedItems: Item[];
   rejectedItems: Item[];
   fetchItems: () => Promise<void>;
-  addItem: (item: Omit<Item, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  addItem: (item: Omit<Item, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<number>;
   updateItem: (id: number, updates: Partial<Item>) => Promise<void>;
   deleteItem: (id: number) => Promise<void>;
 }
@@ -28,14 +28,17 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ isLoading: true });
     try {
       const allItems = await itemRepository.getAll();
-      console.log('📊 همه‌ی آیتم‌ها:', allItems.map(i => ({
+      // ✅ استفاده از new Date برای sort
+      const sorted = allItems.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      console.log('📊 همه‌ی آیتم‌ها:', sorted.map(i => ({
         id: i.id,
         status: i.status,
         title: i.title,
         dueDate: i.dueDate,
       })));
-
-      const sorted = allItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
       const pending = sorted.filter(i => i.status === 'pending');
       const active = sorted.filter(i => i.status === 'active');
@@ -58,33 +61,40 @@ export const useItemStore = create<ItemState>((set, get) => ({
     }
   },
 
-  addItem: async (item: Omit<Item, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
+  // ✅ addItem باید ID آیتم ذخیره‌شده را برگرداند
+  addItem: async (item: Omit<Item, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Promise<number> => {
     console.log('📤 addItem فراخوانی شد:', item);
-    const now = new Date();
-    const newItem: Omit<Item, 'id'> = {
-      ...item,
-      status: 'pending',
-      createdAt: now,
-      updatedAt: now,
-      rawTranscript: item.rawTranscript || item.rawText,
-      correctedTranscript: item.correctedTranscript || item.rawText,
-      correctionStatus: item.correctionStatus || 'none',
-      confidence: item.confidence ?? 1.0,
-      followUpCondition: item.followUpCondition ?? null,
-      followUpDate: item.followUpDate ?? null,
-      project: item.project ?? null,
-      tags: item.tags || [],
-    };
-    await itemRepository.add(newItem);
-    console.log('✅ آیتم اضافه شد، در حال fetch مجدد...');
-    await get().fetchItems();
+    try {
+      const now = new Date();
+      const newItem: Omit<Item, 'id'> = {
+        ...item,
+        status: 'pending',
+        createdAt: now,
+        updatedAt: now,
+        rawTranscript: item.rawTranscript || item.rawText,
+        correctedTranscript: item.correctedTranscript || item.rawText,
+        correctionStatus: item.correctionStatus || 'none',
+        confidence: item.confidence ?? 1.0,
+        followUpCondition: item.followUpCondition ?? null,
+        followUpDate: item.followUpDate ?? null,
+        project: item.project ?? null,
+        tags: item.tags || [],
+      };
+      const savedId = await itemRepository.add(newItem);
+      console.log(`✅ آیتم با ID ${savedId} اضافه شد.`);
+      await get().fetchItems();
+      return savedId;
+    } catch (error) {
+      console.error('❌ خطا در addItem:', error);
+      throw error;
+    }
   },
 
   updateItem: async (id, updates) => {
     console.log(`📤 updateItem فراخوانی شد: id=${id}, updates=`, updates);
     try {
       await itemRepository.update(id, updates);
-      console.log('✅ آیتم به‌روزرسانی شد، در حال fetch مجدد...');
+      console.log('✅ آیتم به‌روزرسانی شد.');
       await get().fetchItems();
     } catch (error) {
       console.error('❌ خطا در updateItem:', error);

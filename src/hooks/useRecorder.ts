@@ -3,10 +3,10 @@ import { useState, useRef } from 'react';
 export const useRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const isRecordingRef = useRef(false);
-  const streamRef = useRef<MediaStream | null>(null);
 
   const startRecording = async () => {
     if (isRecordingRef.current) {
@@ -23,19 +23,23 @@ export const useRecorder = () => {
         return;
       }
 
-      // ✅ تنظیمات کیفیت صدا برای ضبط با کیفیت بهتر
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // ✅ تنظیمات کیفیت صدا
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          sampleRate: 16000,        // نرخ نمونه‌برداری ۱۶ کیلوهرتز (مناسب برای گفتار)
-          channelCount: 1,          // مونو (یک کانال)
-          echoCancellation: true,   // حذف پژواک
-          noiseSuppression: true,   // کاهش نویز پس‌زمینه
-          autoGainControl: true,    // تنظیم خودکار بهره (حجم صدا)
+          sampleRate: 16000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
         }
       });
-      
+
       console.log('✅ دسترسی به میکروفون گرفته شد.');
-      streamRef.current = stream;
+      setStream(mediaStream);
+
+      // ✅ پاک کردن داده‌های قبلی
+      setAudioBlob(null);
+      chunksRef.current = [];
 
       let options: MediaRecorderOptions = {};
       if (MediaRecorder.isTypeSupported('audio/mp4')) {
@@ -49,9 +53,9 @@ export const useRecorder = () => {
         options = {};
       }
 
-      const mediaRecorder = new MediaRecorder(stream, options);
+      const mediaRecorder = new MediaRecorder(mediaStream, options);
       mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
+      console.log('📹 MediaRecorder ساخته شد.');
 
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
@@ -62,28 +66,49 @@ export const useRecorder = () => {
 
       mediaRecorder.onstop = () => {
         console.log('⏹ ضبط متوقف شد. تعداد تکه‌ها:', chunksRef.current.length);
-        const blob = new Blob(chunksRef.current, { type: options.mimeType || 'audio/webm' });
-        console.log(`📦 حجم کل فایل صوتی: ${blob.size} بایت`);
+
+        if (chunksRef.current.length === 0) {
+          console.warn('⚠️ هیچ داده‌ای دریافت نشد.');
+          setIsRecording(false);
+          isRecordingRef.current = false;
+          mediaRecorderRef.current = null;
+          return;
+        }
+
+        // ✅ ساخت Blob با MIME واقعی از MediaRecorder
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        console.log(`📦 حجم کل فایل صوتی: ${blob.size} بایت، MIME: ${mimeType}`);
         setAudioBlob(blob);
 
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => {
+        // ✅ آزاد کردن stream فقط در onstop
+        if (stream) {
+          stream.getTracks().forEach((track) => {
             track.stop();
             console.log('🎤 یک ترک میکروفون آزاد شد.');
           });
-          streamRef.current = null;
+          setStream(null);
         }
 
-        isRecordingRef.current = false;
         setIsRecording(false);
+        isRecordingRef.current = false;
+        mediaRecorderRef.current = null;
         console.log('📊 isRecordingRef به false تنظیم شد.');
       };
 
       mediaRecorder.onerror = (event) => {
         console.error('❌ خطا در MediaRecorder:', event);
+        setIsRecording(false);
+        isRecordingRef.current = false;
+        mediaRecorderRef.current = null;
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+          setStream(null);
+        }
       };
 
-      mediaRecorder.start();
+      // ✅ شروع ضبط با timeslice 1000ms برای دریافت داده‌های منظم
+      mediaRecorder.start(1000);
       isRecordingRef.current = true;
       setIsRecording(true);
       console.log('🔴 ضبط شروع شد.');
@@ -91,6 +116,9 @@ export const useRecorder = () => {
     } catch (error: any) {
       console.error('❌ خطا در دسترسی به میکروفون:', error);
       alert('❌ خطای میکروفون: ' + (error.message || 'خطای ناشناخته'));
+      setIsRecording(false);
+      isRecordingRef.current = false;
+      setStream(null);
     }
   };
 
@@ -100,32 +128,27 @@ export const useRecorder = () => {
     console.log(`📊 isRecordingRef: ${isRecordingRef.current}`);
 
     try {
-      isRecordingRef.current = false;
-
-      if (mediaRecorderRef.current) {
-        console.log(`📊 وضعیت MediaRecorder: ${mediaRecorderRef.current.state}`);
-        if (mediaRecorderRef.current.state === 'recording') {
-          console.log('🛑 در حال توقف MediaRecorder...');
-          mediaRecorderRef.current.stop();
-        } else {
-          console.warn('⚠️ MediaRecorder در حالت recording نیست، state:', mediaRecorderRef.current.state);
-          setIsRecording(false);
-        }
+      if (mediaRecorderRef.current && isRecordingRef.current) {
+        console.log('🛑 در حال توقف MediaRecorder...');
+        mediaRecorderRef.current.stop();
+        // stream در onstop آزاد می‌شود
       } else {
-        console.warn('⚠️ mediaRecorderRef وجود ندارد.');
+        console.warn('⚠️ ضبط در حال اجرا نیست یا MediaRecorder موجود نیست.');
         setIsRecording(false);
+        isRecordingRef.current = false;
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+          setStream(null);
+        }
       }
-
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-        console.log('🎤 stream آزاد شد (پشتیبان).');
-      }
-
     } catch (error: any) {
       console.error('❌ خطا در stopRecording:', error);
       setIsRecording(false);
       isRecordingRef.current = false;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+        setStream(null);
+      }
     }
   };
 
@@ -139,10 +162,10 @@ export const useRecorder = () => {
   return {
     isRecording,
     audioBlob,
+    stream,
     startRecording,
     stopRecording,
     resetAudio,
     isRecordingRef,
-    stream: streamRef.current, // ✅ خروجی stream برای متر صدا
   };
 };

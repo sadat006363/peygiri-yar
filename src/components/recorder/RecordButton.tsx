@@ -7,7 +7,7 @@ import { useItemStore } from '@/stores/itemStore';
 import { RecordingGuide } from './RecordingGuide';
 
 export const RecordButton = () => {
-  const { isRecording, audioBlob, startRecording, stopRecording, resetAudio, isRecordingRef, stream } = useRecorder();
+  const { isRecording, audioBlob, stream, startRecording, stopRecording, resetAudio, isRecordingRef } = useRecorder();
   const audioLevel = useAudioLevel(isRecording ? stream : null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { addItem } = useItemStore();
@@ -37,12 +37,13 @@ export const RecordButton = () => {
     }
   }, [isRecording]);
 
+  // ✅ ارسال خودکار فقط بعد از ساخته شدن Blob و توقف ضبط
   useEffect(() => {
-    if (!isRecording && audioBlob && !isProcessingRef.current) {
-      console.log('🔄 پردازش خودکار شروع شد...');
-      isProcessingRef.current = true;
-      handleSend();
-    }
+    if (isRecording || !audioBlob || isProcessingRef.current) return;
+
+    console.log('🔄 پردازش خودکار شروع شد...');
+    isProcessingRef.current = true;
+    handleSend();
   }, [isRecording, audioBlob]);
 
   const handleClick = async () => {
@@ -50,7 +51,7 @@ export const RecordButton = () => {
     console.log(`📊 isRecording: ${isRecording}`);
     console.log(`📊 isRecordingRef: ${isRecordingRef.current}`);
 
-    if (isRecordingRef.current) {
+    if (isRecording || isRecordingRef.current) {
       console.log('⏹ توقف دستی ضبط...');
       if (timerRef.current) {
         clearTimeout(timerRef.current);
@@ -66,19 +67,18 @@ export const RecordButton = () => {
     console.log('🎤 شروع ضبط...');
     await startRecording();
 
-    if (isRecordingRef.current) {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-      timerRef.current = setTimeout(() => {
-        console.log('⏰ توقف خودکار پس از ۶۰ ثانیه...');
-        if (isRecordingRef.current) {
-          stopRecording();
-        }
-        timerRef.current = null;
-      }, 60000);
+    // ✅ تنظیم تایمر ۶۰ ثانیه‌ای بدون شرط اضافی
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
+    timerRef.current = setTimeout(() => {
+      console.log('⏰ توقف خودکار پس از ۶۰ ثانیه...');
+      if (isRecordingRef.current) {
+        stopRecording();
+      }
+      timerRef.current = null;
+    }, 60000);
   };
 
   const formatTime = (seconds: number) => {
@@ -94,27 +94,41 @@ export const RecordButton = () => {
     return 'bg-red-500';
   };
 
-  // ✅ تشخیص متن معنی‌دار (ساده و قابل‌قبول برای فارسی)
+  // ✅ اعتبارسنجی قوی‌تر متن
   const isValidText = (text: string): boolean => {
     const trimmed = text.trim();
-    if (trimmed.length < 2) return false;
+    // حداقل ۳ کاراکتر
+    if (trimmed.length < 3) return false;
+    // فقط اعداد یا نمادها نباشد
     if (/^[\d\s\W_]+$/.test(trimmed)) return false;
     const words = trimmed.split(/\s+/).filter(w => w.length > 1);
-    return words.length >= 1;
+    // حداقل یک کلمه با طول > ۱
+    if (words.length < 1) return false;
+    // تشخیص کلمات تکراری بی‌معنی (مانند "سلام سلام سلام")
+    const uniqueWords = new Set(words);
+    if (uniqueWords.size === 1 && words.length >= 3) {
+      const word = words[0];
+      // اگر کلمه فارسی باشد و حروف تکراری داشته باشد
+      if (/^[\u0600-\u06FF]+$/.test(word)) {
+        const repeated = word.split('').every((c, i, arr) => c === arr[0]);
+        if (repeated) return false;
+      }
+      // اگر کلمه بی‌معنی باشد (مانند "خوب خوب خوب")
+      if (word.length < 2) return false;
+    }
+    return true;
   };
 
-  // ✅ تشخیص نویز (متن‌های تکراری بی‌معنی)
+  // ✅ تشخیص سکوت یا نویز
   const isNoise = (text: string): boolean => {
     const trimmed = text.trim();
     if (trimmed.length < 3) return true;
-    const words = trimmed.split(/\s+/);
+    const words = trimmed.split(/\s+/).filter(w => w.length > 1);
+    if (words.length === 0) return true;
+    // اگر همه کلمات یکسان باشند و تعدادشان زیاد باشد
     const uniqueWords = new Set(words);
-    if (uniqueWords.size === 1 && words.length > 3) {
-      const word = words[0];
-      if (word.length > 3 && /^[\u0600-\u06FF]+$/.test(word)) {
-        const repeated = word.split('').every((c, i, arr) => c === arr[0]);
-        if (repeated) return true;
-      }
+    if (uniqueWords.size === 1 && words.length > 2) {
+      return true;
     }
     return false;
   };
@@ -128,7 +142,7 @@ export const RecordButton = () => {
       return;
     }
 
-    // ✅ بررسی حجم فایل (حتی برای ضبط‌های کوتاه)
+    console.log(`📊 حجم فایل صوتی: ${audioBlob.size} بایت`);
     if (audioBlob.size < 3000) {
       console.warn('⚠️ حجم فایل صوتی بسیار کم است (احتمالاً نویز).');
       alert('❌ No speech detected. Please record a voice message and try again.');
@@ -161,7 +175,7 @@ export const RecordButton = () => {
       const rawText = transcribeData.text;
       console.log('✅ متن خام از Whisper:', rawText);
 
-      // ✅ بررسی معنی‌دار بودن متن
+      // ✅ اعتبارسنجی قوی
       if (!isValidText(rawText) || isNoise(rawText)) {
         console.warn('⚠️ متن تشخیص‌داده‌شده معنی‌دار نیست یا نویز است:', rawText);
         alert('❌ No clear speech detected. Please speak clearly and try again.');
@@ -197,14 +211,8 @@ export const RecordButton = () => {
         })),
       };
 
-      console.log('📦 داده‌های ارسالی به correction:', {
-        ...correctionPayload,
-        userCorrections: correctionPayload.userCorrections.slice(0, 5),
-      });
-
       let correctedText = rawText;
       let correctionChanges: any[] = [];
-      let needsConfirmation = false;
       let confidence = 1.0;
 
       try {
@@ -216,16 +224,12 @@ export const RecordButton = () => {
 
         console.log(`📥 پاسخ /api/correct: status ${correctRes.status}`);
 
-        if (!correctRes.ok) {
-          const errorText = await correctRes.text();
-          console.warn('⚠️ خطا در اصلاح متن:', errorText);
-        } else {
+        if (correctRes.ok) {
           const correctData = await correctRes.json();
           console.log('✅ داده‌های اصلاح‌شده:', correctData);
 
           correctedText = correctData.correctedText || rawText;
           correctionChanges = correctData.changes || [];
-          needsConfirmation = correctData.needsConfirmation !== false;
           
           if (correctionChanges.length > 0) {
             const totalConfidence = correctionChanges.reduce((sum: number, c: any) => sum + (c.confidence || 0.5), 0);
@@ -269,7 +273,7 @@ export const RecordButton = () => {
       console.log('✅ داده ساختاردهی‌شده:', structuredData);
 
       console.log('📤 مرحله 4: ذخیره آیتم در دیتابیس...');
-      await addItem({
+      const savedId = await addItem({
         rawText: rawText,
         correctedText: correctedText,
         rawTranscript: rawText,
@@ -283,7 +287,7 @@ export const RecordButton = () => {
         dueDate: structuredData.dueDate || null,
       });
 
-      console.log('✅ آیتم با موفقیت ذخیره شد.');
+      console.log(`✅ آیتم با شناسه ${savedId} با موفقیت ذخیره شد.`);
       resetAudio();
 
     } catch (error: any) {

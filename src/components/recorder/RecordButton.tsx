@@ -94,18 +94,29 @@ export const RecordButton = () => {
     return 'bg-red-500';
   };
 
+  // ✅ تشخیص متن معنی‌دار (ساده و قابل‌قبول برای فارسی)
   const isValidText = (text: string): boolean => {
     const trimmed = text.trim();
-    if (trimmed.length === 0) return false;
-    
-    // حذف متن‌های فقط عددی یا نمادین
+    if (trimmed.length < 2) return false;
     if (/^[\d\s\W_]+$/.test(trimmed)) return false;
-    
-    // کلمات با طول بیش از ۱ کاراکتر
     const words = trimmed.split(/\s+/).filter(w => w.length > 1);
-    
-    // حداقل ۲ کلمه یا حداقل ۳ کاراکتر معنی‌دار
-    return words.length >= 2 || trimmed.length >= 3;
+    return words.length >= 1;
+  };
+
+  // ✅ تشخیص نویز (متن‌های تکراری بی‌معنی)
+  const isNoise = (text: string): boolean => {
+    const trimmed = text.trim();
+    if (trimmed.length < 3) return true;
+    const words = trimmed.split(/\s+/);
+    const uniqueWords = new Set(words);
+    if (uniqueWords.size === 1 && words.length > 3) {
+      const word = words[0];
+      if (word.length > 3 && /^[\u0600-\u06FF]+$/.test(word)) {
+        const repeated = word.split('').every((c, i, arr) => c === arr[0]);
+        if (repeated) return true;
+      }
+    }
+    return false;
   };
 
   const handleSend = async () => {
@@ -117,8 +128,9 @@ export const RecordButton = () => {
       return;
     }
 
-    if (audioBlob.size < 5000) {
-      console.warn('⚠️ حجم فایل صوتی بسیار کم است.');
+    // ✅ بررسی حجم فایل (حتی برای ضبط‌های کوتاه)
+    if (audioBlob.size < 3000) {
+      console.warn('⚠️ حجم فایل صوتی بسیار کم است (احتمالاً نویز).');
       alert('❌ No speech detected. Please record a voice message and try again.');
       resetAudio();
       isProcessingRef.current = false;
@@ -150,8 +162,8 @@ export const RecordButton = () => {
       console.log('✅ متن خام از Whisper:', rawText);
 
       // ✅ بررسی معنی‌دار بودن متن
-      if (!isValidText(rawText)) {
-        console.warn('⚠️ متن تشخیص‌داده‌شده معنی‌دار نیست:', rawText);
+      if (!isValidText(rawText) || isNoise(rawText)) {
+        console.warn('⚠️ متن تشخیص‌داده‌شده معنی‌دار نیست یا نویز است:', rawText);
         alert('❌ No clear speech detected. Please speak clearly and try again.');
         resetAudio();
         setIsProcessing(false);
@@ -229,8 +241,8 @@ export const RecordButton = () => {
       }
 
       // ✅ بررسی مجدد متن اصلاح‌شده
-      if (!isValidText(correctedText)) {
-        console.warn('⚠️ متن اصلاح‌شده نیز معنی‌دار نیست:', correctedText);
+      if (!isValidText(correctedText) || isNoise(correctedText)) {
+        console.warn('⚠️ متن اصلاح‌شده نیز معنی‌دار نیست یا نویز است:', correctedText);
         alert('❌ No clear speech detected. Please speak clearly and try again.');
         resetAudio();
         setIsProcessing(false);

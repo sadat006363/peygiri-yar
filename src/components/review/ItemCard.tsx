@@ -150,21 +150,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
           <h4 className="font-bold text-gray-800 text-lg">{item.title}</h4>
           <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
 
-          {item.rawTranscript && item.correctedTranscript && item.rawTranscript !== item.correctedTranscript && (
-            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-xs text-gray-500">🗣️ Original: {item.rawTranscript}</p>
-              <p className="text-xs text-green-600">✨ Corrected: {item.correctedTranscript}</p>
-              {item.confidence && item.confidence < 0.85 && (
-                <p className="text-xs text-orange-600 mt-1">
-                  ⚠️ Low confidence ({Math.round(item.confidence * 100)}%). Please verify.
-                </p>
-              )}
-              {item.correctionStatus === 'ai_corrected' && (
-                <p className="text-xs text-blue-500 mt-1">🤖 AI corrected</p>
-              )}
-            </div>
-          )}
-
           {item.dueDate && (
             <div className="text-xs text-gray-500">
               📅 Due: {new Date(item.dueDate).toLocaleDateString('en-US')}
@@ -217,7 +202,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
             </div>
           )}
 
-          {/* دکمه‌های عملیاتی بر اساس وضعیت */}
           {item.status === 'pending' && (
             <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100">
               <Button variant="success" size="sm" onClick={handleApprove}>✔ Approve</Button>

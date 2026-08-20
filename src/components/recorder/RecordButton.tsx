@@ -94,6 +94,20 @@ export const RecordButton = () => {
     return 'bg-red-500';
   };
 
+  const isValidText = (text: string): boolean => {
+    const trimmed = text.trim();
+    if (trimmed.length === 0) return false;
+    
+    // حذف متن‌های فقط عددی یا نمادین
+    if (/^[\d\s\W_]+$/.test(trimmed)) return false;
+    
+    // کلمات با طول بیش از ۱ کاراکتر
+    const words = trimmed.split(/\s+/).filter(w => w.length > 1);
+    
+    // حداقل ۲ کلمه یا حداقل ۳ کاراکتر معنی‌دار
+    return words.length >= 2 || trimmed.length >= 3;
+  };
+
   const handleSend = async () => {
     console.log('📤 handleSend فراخوانی شد.');
 
@@ -135,7 +149,9 @@ export const RecordButton = () => {
       const rawText = transcribeData.text;
       console.log('✅ متن خام از Whisper:', rawText);
 
-      if (rawText.trim().length < 2) {
+      // ✅ بررسی معنی‌دار بودن متن
+      if (!isValidText(rawText)) {
+        console.warn('⚠️ متن تشخیص‌داده‌شده معنی‌دار نیست:', rawText);
         alert('❌ No clear speech detected. Please speak clearly and try again.');
         resetAudio();
         setIsProcessing(false);
@@ -210,6 +226,16 @@ export const RecordButton = () => {
         }
       } catch (error: any) {
         console.warn('⚠️ خطا در فراخوانی correction API:', error.message);
+      }
+
+      // ✅ بررسی مجدد متن اصلاح‌شده
+      if (!isValidText(correctedText)) {
+        console.warn('⚠️ متن اصلاح‌شده نیز معنی‌دار نیست:', correctedText);
+        alert('❌ No clear speech detected. Please speak clearly and try again.');
+        resetAudio();
+        setIsProcessing(false);
+        isProcessingRef.current = false;
+        return;
       }
 
       console.log('📤 مرحله 3: ارسال متن به /api/structure...');

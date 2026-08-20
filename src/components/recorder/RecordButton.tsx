@@ -95,30 +95,24 @@ export const RecordButton = () => {
   // ✅ اعتبارسنجی قوی‌تر متن
   const isValidText = (text: string): boolean => {
     const trimmed = text.trim();
-    // حداقل ۳ کاراکتر
     if (trimmed.length < 3) return false;
-    // رد کردن متن‌های فقط عددی یا نمادی
     if (/^[\d\s\W_]+$/.test(trimmed)) return false;
-    // حداقل ۲ کلمه با طول > ۱
     const words = trimmed.split(/\s+/).filter(w => w.length > 1);
     if (words.length < 2) return false;
     return true;
   };
 
-  // ✅ تشخیص نویز (متن‌های تکراری بی‌معنی یا جملات تصادفی کوتاه)
+  // ✅ تشخیص نویز
   const isNoise = (text: string): boolean => {
     const trimmed = text.trim();
     if (trimmed.length < 5) return true;
     const words = trimmed.split(/\s+/).filter(w => w.length > 0);
     if (words.length === 0) return true;
-    // اگر همه کلمات یکسان باشند و تعدادشان زیاد باشد (مثل "سلام سلام سلام")
     const uniqueWords = new Set(words);
     if (uniqueWords.size === 1 && words.length >= 3) {
       return true;
     }
-    // تشخیص جملات تصادفی کوتاه (مثل "Thank you for watching.")
     if (words.length <= 3 && trimmed.length < 20) {
-      // اگر جمله شامل کلمات رایج نویز باشد
       const noisePhrases = ['thank you for watching', 'thanks for watching', 'hello', 'hi', 'test', 'testing'];
       if (noisePhrases.some(phrase => trimmed.toLowerCase().includes(phrase))) {
         return true;
@@ -137,7 +131,7 @@ export const RecordButton = () => {
     }
 
     console.log(`📊 حجم فایل صوتی: ${audioBlob.size} بایت`);
-    // ✅ حداقل حجم فایل را به ۴۰۰۰ بایت افزایش دهید
+
     if (audioBlob.size < 4000) {
       console.warn('⚠️ حجم فایل صوتی بسیار کم است (احتمالاً نویز).');
       alert('❌ No speech detected. Please record a voice message and try again.');
@@ -167,10 +161,30 @@ export const RecordButton = () => {
       }
 
       const transcribeData = await transcribeRes.json();
-      const rawText = transcribeData.text;
+      console.log('📊 اطلاعات کامل Whisper:', {
+        text: transcribeData.text,
+        duration: transcribeData.duration,
+        language: transcribeData.language,
+        no_speech_prob: transcribeData.no_speech_prob,
+        avg_logprob: transcribeData.avg_logprob,
+        segments: transcribeData.segments?.length || 0,
+      });
+
+      const rawText = transcribeData.text || '';
+      const noSpeechProb = transcribeData.no_speech_prob || 0;
+
+      // ✅ اگر noSpeechProb بالا باشد یا متن خالی باشد، ذخیره نکن
+      if (noSpeechProb > 0.8 || rawText.trim().length === 0) {
+        console.warn(`⚠️ تشخیص گفتار ضعیف: noSpeechProb=${noSpeechProb}, text="${rawText}"`);
+        alert('❌ We received audio but couldn\'t understand speech. Please try again speaking more clearly.');
+        resetAudio();
+        setIsProcessing(false);
+        isProcessingRef.current = false;
+        return;
+      }
+
       console.log('✅ متن خام از Whisper:', rawText);
 
-      // ✅ اعتبارسنجی قوی
       if (!isValidText(rawText) || isNoise(rawText)) {
         console.warn('⚠️ متن تشخیص‌داده‌شده معنی‌دار نیست یا نویز است:', rawText);
         alert('❌ No clear speech detected. Please speak clearly and try again.');

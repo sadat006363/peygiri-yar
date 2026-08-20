@@ -23,31 +23,34 @@ export const useRecorder = () => {
         return;
       }
 
-      // ✅ تنظیمات کیفیت صدا
+      // ✅ خاموش کردن پردازش‌های خودکار مرورگر برای کیفیت بهتر گفتار
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate: 16000,
           channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
         }
       });
 
       console.log('✅ دسترسی به میکروفون گرفته شد.');
       setStream(mediaStream);
 
-      // ✅ پاک کردن داده‌های قبلی
       setAudioBlob(null);
       chunksRef.current = [];
 
+      // ✅ اولویت: WebM/Opus → WebM → MP4
       let options: MediaRecorderOptions = {};
-      if (MediaRecorder.isTypeSupported('audio/mp4')) {
-        options = { mimeType: 'audio/mp4' };
-        console.log('📀 فرمت انتخاب شده: audio/mp4');
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        options = { mimeType: 'audio/webm;codecs=opus' };
+        console.log('📀 فرمت انتخاب شده: audio/webm;codecs=opus');
       } else if (MediaRecorder.isTypeSupported('audio/webm')) {
         options = { mimeType: 'audio/webm' };
         console.log('📀 فرمت انتخاب شده: audio/webm');
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        options = { mimeType: 'audio/mp4' };
+        console.log('📀 فرمت انتخاب شده: audio/mp4');
       } else {
         console.warn('⚠️ هیچ فرمت پشتیبانی‌شده‌ای پیدا نشد.');
         options = {};
@@ -75,15 +78,23 @@ export const useRecorder = () => {
           return;
         }
 
-        // ✅ ساخت Blob با MIME واقعی از MediaRecorder
+        // ✅ استفاده از mimeType واقعی MediaRecorder
         const mimeType = mediaRecorder.mimeType || 'audio/webm';
         const blob = new Blob(chunksRef.current, { type: mimeType });
+
+        // ✅ لاگ نهایی blob
+        console.log('📊 اطلاعات نهایی Blob:', {
+          size: blob.size,
+          type: blob.type,
+          chunks: chunksRef.current.length,
+          chunkTypes: chunksRef.current.map((c) => c.type),
+        });
+
         console.log(`📦 حجم کل فایل صوتی: ${blob.size} بایت، MIME: ${mimeType}`);
         setAudioBlob(blob);
 
-        // ✅ آزاد کردن stream فقط در onstop
-        if (stream) {
-          stream.getTracks().forEach((track) => {
+        if (mediaStream) {
+          mediaStream.getTracks().forEach((track) => {
             track.stop();
             console.log('🎤 یک ترک میکروفون آزاد شد.');
           });
@@ -101,13 +112,12 @@ export const useRecorder = () => {
         setIsRecording(false);
         isRecordingRef.current = false;
         mediaRecorderRef.current = null;
-        if (stream) {
-          stream.getTracks().forEach((track) => track.stop());
+        if (mediaStream) {
+          mediaStream.getTracks().forEach((track) => track.stop());
           setStream(null);
         }
       };
 
-      // ✅ شروع ضبط با timeslice 1000ms برای دریافت داده‌های منظم
       mediaRecorder.start(1000);
       isRecordingRef.current = true;
       setIsRecording(true);
@@ -131,7 +141,6 @@ export const useRecorder = () => {
       if (mediaRecorderRef.current && isRecordingRef.current) {
         console.log('🛑 در حال توقف MediaRecorder...');
         mediaRecorderRef.current.stop();
-        // stream در onstop آزاد می‌شود
       } else {
         console.warn('⚠️ ضبط در حال اجرا نیست یا MediaRecorder موجود نیست.');
         setIsRecording(false);

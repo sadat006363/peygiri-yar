@@ -92,25 +92,35 @@ export const RecordButton = () => {
     return 'bg-red-500';
   };
 
-  // ✅ تشخیص متن معنی‌دار (ساده و قابل‌قبول)
+  // ✅ اعتبارسنجی قوی‌تر متن
   const isValidText = (text: string): boolean => {
     const trimmed = text.trim();
-    if (trimmed.length < 2) return false;
+    // حداقل ۳ کاراکتر
+    if (trimmed.length < 3) return false;
+    // رد کردن متن‌های فقط عددی یا نمادی
     if (/^[\d\s\W_]+$/.test(trimmed)) return false;
+    // حداقل ۲ کلمه با طول > ۱
     const words = trimmed.split(/\s+/).filter(w => w.length > 1);
-    return words.length >= 1;
+    if (words.length < 2) return false;
+    return true;
   };
 
-  // ✅ تشخیص نویز (متن‌های تکراری بی‌معنی)
+  // ✅ تشخیص نویز (متن‌های تکراری بی‌معنی یا جملات تصادفی کوتاه)
   const isNoise = (text: string): boolean => {
     const trimmed = text.trim();
-    if (trimmed.length < 2) return true;
+    if (trimmed.length < 5) return true;
     const words = trimmed.split(/\s+/).filter(w => w.length > 0);
     if (words.length === 0) return true;
+    // اگر همه کلمات یکسان باشند و تعدادشان زیاد باشد (مثل "سلام سلام سلام")
     const uniqueWords = new Set(words);
-    if (uniqueWords.size === 1 && words.length >= 5) {
-      const word = words[0];
-      if (word.length > 2 && word.split('').every((c, i, arr) => c === arr[0])) {
+    if (uniqueWords.size === 1 && words.length >= 3) {
+      return true;
+    }
+    // تشخیص جملات تصادفی کوتاه (مثل "Thank you for watching.")
+    if (words.length <= 3 && trimmed.length < 20) {
+      // اگر جمله شامل کلمات رایج نویز باشد
+      const noisePhrases = ['thank you for watching', 'thanks for watching', 'hello', 'hi', 'test', 'testing'];
+      if (noisePhrases.some(phrase => trimmed.toLowerCase().includes(phrase))) {
         return true;
       }
     }
@@ -127,7 +137,8 @@ export const RecordButton = () => {
     }
 
     console.log(`📊 حجم فایل صوتی: ${audioBlob.size} بایت`);
-    if (audioBlob.size < 3000) {
+    // ✅ حداقل حجم فایل را به ۴۰۰۰ بایت افزایش دهید
+    if (audioBlob.size < 4000) {
       console.warn('⚠️ حجم فایل صوتی بسیار کم است (احتمالاً نویز).');
       alert('❌ No speech detected. Please record a voice message and try again.');
       resetAudio();
@@ -159,6 +170,7 @@ export const RecordButton = () => {
       const rawText = transcribeData.text;
       console.log('✅ متن خام از Whisper:', rawText);
 
+      // ✅ اعتبارسنجی قوی
       if (!isValidText(rawText) || isNoise(rawText)) {
         console.warn('⚠️ متن تشخیص‌داده‌شده معنی‌دار نیست یا نویز است:', rawText);
         alert('❌ No clear speech detected. Please speak clearly and try again.');

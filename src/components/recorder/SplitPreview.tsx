@@ -77,43 +77,49 @@ export const SplitPreview = ({
         {items.map((item, index) => (
           <Card
             key={index}
-            className={`cursor-pointer transition-all ${
+            className={`transition-all ${
               selectedIndices.has(index)
                 ? 'border-indigo-500 bg-indigo-50'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
-            onClick={() => toggleItem(index)}
           >
-            <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                checked={selectedIndices.has(index)}
-                onChange={() => toggleItem(index)}
-                className="mt-1 w-4 h-4 text-indigo-600"
-              />
-              <div className="flex-1">
-                <div className="flex flex-wrap gap-2 items-center">
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100">
-                    {categoryLabels[item.category] || item.category}
-                  </span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100">
-                    {priorityLabels[item.priority] || item.priority}
-                  </span>
-                  {item.confidence < 0.85 && (
-                    <span className="text-xs text-orange-600">⚠️ Low confidence</span>
+            {/* ✅ onClick روی div داخلی قرار داده شده */}
+            <div
+              className="cursor-pointer p-4"
+              onClick={() => toggleItem(index)}
+            >
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedIndices.has(index)}
+                  onChange={() => toggleItem(index)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-1 w-4 h-4 text-indigo-600"
+                />
+                <div className="flex-1">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100">
+                      {categoryLabels[item.category] || item.category}
+                    </span>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100">
+                      {priorityLabels[item.priority] || item.priority}
+                    </span>
+                    {item.confidence < 0.85 && (
+                      <span className="text-xs text-orange-600">⚠️ Low confidence</span>
+                    )}
+                  </div>
+                  <h4 className="font-semibold text-gray-800 mt-1">{item.title}</h4>
+                  <p className="text-sm text-gray-600">{item.description}</p>
+                  {item.dueDate && (
+                    <p className="text-xs text-gray-500 mt-1">📅 Due: {item.dueDate}</p>
+                  )}
+                  {item.nextAction && (
+                    <p className="text-xs text-green-600">🎯 Next: {item.nextAction}</p>
+                  )}
+                  {item.waitingFor && (
+                    <p className="text-xs text-orange-600">⏳ Waiting: {item.waitingFor}</p>
                   )}
                 </div>
-                <h4 className="font-semibold text-gray-800 mt-1">{item.title}</h4>
-                <p className="text-sm text-gray-600">{item.description}</p>
-                {item.dueDate && (
-                  <p className="text-xs text-gray-500 mt-1">📅 Due: {item.dueDate}</p>
-                )}
-                {item.nextAction && (
-                  <p className="text-xs text-green-600">🎯 Next: {item.nextAction}</p>
-                )}
-                {item.waitingFor && (
-                  <p className="text-xs text-orange-600">⏳ Waiting: {item.waitingFor}</p>
-                )}
               </div>
             </div>
           </Card>

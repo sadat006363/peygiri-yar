@@ -13,8 +13,8 @@ import { Card } from '@/components/ui/Card';
 
 export default function Home() {
   const { fetchItems } = useItemStore();
-  // ✅ پیش‌فرض: بخش Summary باز باشد
-  const [openSection, setOpenSection] = useState<string | null>('summary');
+  // ✅ تغییر: همه‌ی بخش‌ها در حالت بسته (جمع‌شده) باشند
+  const [openSection, setOpenSection] = useState<string | null>(null);
 
   useEffect(() => {
     fetchItems();

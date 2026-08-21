@@ -5,31 +5,29 @@ import { RecordButton } from '@/components/recorder/RecordButton';
 import { ApprovalList } from '@/components/review/ApprovalList';
 import { HistoryList } from '@/components/history/HistoryList';
 import { TodayTasks } from '@/components/dashboard/TodayTasks';
-import { DailyBriefing } from '@/components/dashboard/DailyBriefing';
+import { UnscheduledTasks } from '@/components/dashboard/UnscheduledTasks';
 import { useItemStore } from '@/stores/itemStore';
 import { Card } from '@/components/ui/Card';
 
 export default function Home() {
   const { fetchItems } = useItemStore();
-  const [openSection, setOpenSection] = useState<string | null>('briefing'); // پیش‌فرض: بخش اول باز باشد
+  const [openSection, setOpenSection] = useState<string | null>('pending');
 
   useEffect(() => {
     fetchItems();
   }, []);
 
-  // تابع برای تغییر وضعیت باز/بسته
   const toggleSection = (sectionId: string) => {
     if (openSection === sectionId) {
-      setOpenSection(null); // اگر همان بخش باز است، آن را ببند
+      setOpenSection(null);
     } else {
-      setOpenSection(sectionId); // در غیر این صورت، بخش جدید را باز کن
+      setOpenSection(sectionId);
     }
   };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* ===== HEADER ===== */}
         <header className="text-center py-8">
           <div className="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">
             <h1 className="text-4xl font-extrabold tracking-tight">🎯 Peygiri Yar</h1>
@@ -38,50 +36,14 @@ export default function Home() {
           <div className="w-24 h-1 bg-gradient-to-r from-indigo-400 to-purple-400 mx-auto mt-3 rounded-full"></div>
         </header>
 
-        {/* ===== RECORDER ===== */}
+        {/* Recorder */}
         <Card className="mb-8 bg-white/80 backdrop-blur-sm border border-white/50 shadow-xl">
           <div className="py-4">
             <RecordButton />
           </div>
         </Card>
 
-        {/* ===== SECTION 1: Daily Briefing ===== */}
-        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
-          <button
-            onClick={() => toggleSection('briefing')}
-            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-          >
-            <h2 className="text-lg font-bold text-gray-800">🌅 Daily Briefing</h2>
-            <span className="text-gray-500 text-xl">
-              {openSection === 'briefing' ? '▲' : '▼'}
-            </span>
-          </button>
-          {openSection === 'briefing' && (
-            <div className="p-4 bg-white">
-              <DailyBriefing />
-            </div>
-          )}
-        </div>
-
-        {/* ===== SECTION 2: Your Tasks ===== */}
-        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
-          <button
-            onClick={() => toggleSection('tasks')}
-            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-          >
-            <h2 className="text-lg font-bold text-gray-800">📋 Your Tasks</h2>
-            <span className="text-gray-500 text-xl">
-              {openSection === 'tasks' ? '▲' : '▼'}
-            </span>
-          </button>
-          {openSection === 'tasks' && (
-            <div className="p-4 bg-white">
-              <TodayTasks />
-            </div>
-          )}
-        </div>
-
-        {/* ===== SECTION 3: Pending Approval ===== */}
+        {/* SECTION 1: Pending Approval */}
         <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
           <button
             onClick={() => toggleSection('pending')}
@@ -99,7 +61,43 @@ export default function Home() {
           )}
         </div>
 
-        {/* ===== SECTION 4: History ===== */}
+        {/* SECTION 2: Today's Tasks */}
+        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+          <button
+            onClick={() => toggleSection('today')}
+            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <h2 className="text-lg font-bold text-gray-800">📅 Today's Tasks</h2>
+            <span className="text-gray-500 text-xl">
+              {openSection === 'today' ? '▲' : '▼'}
+            </span>
+          </button>
+          {openSection === 'today' && (
+            <div className="p-4 bg-white">
+              <TodayTasks />
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 3: Unscheduled */}
+        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+          <button
+            onClick={() => toggleSection('unscheduled')}
+            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <h2 className="text-lg font-bold text-gray-800">📌 Unscheduled</h2>
+            <span className="text-gray-500 text-xl">
+              {openSection === 'unscheduled' ? '▲' : '▼'}
+            </span>
+          </button>
+          {openSection === 'unscheduled' && (
+            <div className="p-4 bg-white">
+              <UnscheduledTasks />
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 4: History */}
         <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
           <button
             onClick={() => toggleSection('history')}
@@ -117,7 +115,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* ===== FOOTER ===== */}
         <footer className="text-center text-xs text-gray-400 mt-12 border-t border-gray-200 pt-6">
           Peygiri Yar · MVP · All data is stored locally on your device
         </footer>

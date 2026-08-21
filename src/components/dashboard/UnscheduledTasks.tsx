@@ -5,9 +5,9 @@ import { useItemStore } from '@/stores/itemStore';
 import { Item } from '@/lib/types';
 import { Card } from '../ui/Card';
 
-export const TodayTasks = () => {
+export const UnscheduledTasks = () => {
   const { activeItems, fetchItems, isLoading } = useItemStore();
-  const [todayItems, setTodayItems] = useState<Item[]>([]);
+  const [unscheduledItems, setUnscheduledItems] = useState<Item[]>([]);
 
   useEffect(() => {
     fetchItems();
@@ -16,38 +16,31 @@ export const TodayTasks = () => {
   useEffect(() => {
     if (activeItems.length === 0) return;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const todayList = activeItems.filter(i => {
-      if (!i.dueDate) return false;
-      const due = new Date(i.dueDate);
-      due.setHours(0, 0, 0, 0);
-      return due.getTime() === today.getTime();
-    });
-
-    setTodayItems(todayList);
+    // آیتم‌های active که dueDate ندارند
+    const list = activeItems.filter(i => !i.dueDate);
+    setUnscheduledItems(list);
   }, [activeItems]);
 
   if (isLoading) return <p className="text-gray-400 text-center py-4">Loading...</p>;
 
-  if (todayItems.length === 0) {
+  if (unscheduledItems.length === 0) {
     return (
       <Card className="bg-gray-50 border-dashed">
-        <p className="text-gray-400 text-center py-4">📭 No tasks for today.</p>
+        <p className="text-gray-400 text-center py-4">📌 No unscheduled items.</p>
       </Card>
     );
   }
 
   return (
     <div className="space-y-4">
-      <h3 className="font-bold text-gray-700">📅 Today ({todayItems.length})</h3>
-      {todayItems.map((item) => (
-        <Card key={item.id} className="border-l-4 border-indigo-500 bg-indigo-50/50">
+      <h3 className="font-bold text-gray-700">📌 Unscheduled ({unscheduledItems.length})</h3>
+      {unscheduledItems.map((item) => (
+        <Card key={item.id} className="border-l-4 border-gray-400 bg-gray-50/50">
           <div className="flex justify-between items-start">
             <div>
               <h4 className="font-bold text-gray-800">{item.title}</h4>
               <p className="text-sm text-gray-600">{item.description}</p>
+              <span className="text-xs text-gray-400">⏳ No due date set</span>
             </div>
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
               item.priority === 'high' ? 'bg-red-100 text-red-700' :

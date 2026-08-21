@@ -36,15 +36,16 @@ const statusLabels = {
   active: '✅ Active',
   completed: '✔ Completed',
   rejected: '✖ Rejected',
+  needs_review: '🔍 Needs Review',
 };
 const statusColors = {
   pending: 'bg-gray-100 text-gray-700',
   active: 'bg-green-100 text-green-700',
   completed: 'bg-blue-100 text-blue-700',
   rejected: 'bg-red-100 text-red-700',
+  needs_review: 'bg-yellow-100 text-yellow-700',
 };
 
-// ✅ جدید: برچسب‌های وضعیت Follow-up
 const followUpLabels: Record<FollowUpStatus, string> = {
   waiting_for_reply: '⏳ Waiting for Reply',
   awaiting_payment: '💰 Awaiting Payment',
@@ -67,8 +68,9 @@ export const ItemCard = ({ item }: { item: Item }) => {
   const [editDesc, setEditDesc] = useState<string>(item.description ?? '');
   const [editPriority, setEditPriority] = useState<Priority>(item.priority);
   const [editDueDate, setEditDueDate] = useState<string>(item.dueDate ?? '');
+  const [editNextAction, setEditNextAction] = useState<string>(item.nextAction ?? '');
+  const [editWaitingFor, setEditWaitingFor] = useState<string>(item.waitingFor ?? '');
 
-  // ✅ جدید: تغییر وضعیت Follow-up
   const handleUpdateFollowUpStatus = async (status: FollowUpStatus) => {
     if (item.id) {
       await updateItem(item.id, { followUpStatus: status });
@@ -148,6 +150,8 @@ export const ItemCard = ({ item }: { item: Item }) => {
         description: editDesc,
         priority: editPriority,
         dueDate: editDueDate || undefined,
+        nextAction: editNextAction || undefined,
+        waitingFor: editWaitingFor || undefined,
       });
       setIsEditing(false);
       alert('✅ Item updated and corrections saved to memory.');
@@ -168,7 +172,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColors[item.status]}`}>
               {statusLabels[item.status] || item.status}
             </span>
-            {/* ✅ جدید: نمایش وضعیت Follow-up */}
             {item.status === 'active' && item.followUpStatus && (
               <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${followUpColors[item.followUpStatus]}`}>
                 {followUpLabels[item.followUpStatus]}
@@ -178,6 +181,18 @@ export const ItemCard = ({ item }: { item: Item }) => {
 
           <h4 className="font-bold text-gray-800 text-lg">{item.title}</h4>
           <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
+
+          {/* ✅ نمایش فیلدهای جدید */}
+          {item.nextAction && (
+            <div className="text-xs text-green-600 font-medium">
+              🎯 Next Action: {item.nextAction}
+            </div>
+          )}
+          {item.waitingFor && (
+            <div className="text-xs text-orange-600 font-medium">
+              ⏳ Waiting for: {item.waitingFor}
+            </div>
+          )}
 
           {item.rawTranscript && item.correctedTranscript && item.rawTranscript !== item.correctedTranscript && (
             <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -256,7 +271,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
 
           {item.status === 'active' && (
             <div className="flex flex-col gap-2 mt-3 pt-2 border-t border-gray-100">
-              {/* ✅ جدید: دکمه‌های انتخاب وضعیت Follow-up */}
               <div className="flex flex-wrap gap-1">
                 <Button 
                   variant={item.followUpStatus === 'waiting_for_reply' ? 'primary' : 'secondary'} 
@@ -342,7 +356,23 @@ export const ItemCard = ({ item }: { item: Item }) => {
           type="date"
           value={editDueDate}
           onChange={(e) => setEditDueDate(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          placeholder="Due Date"
+        />
+        {/* ✅ جدید: فیلدهای عملیاتی */}
+        <input
+          type="text"
+          value={editNextAction}
+          onChange={(e) => setEditNextAction(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          placeholder="Next Action (e.g., 'Follow up with John')"
+        />
+        <input
+          type="text"
+          value={editWaitingFor}
+          onChange={(e) => setEditWaitingFor(e.target.value)}
           className="w-full border border-gray-300 rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          placeholder="Waiting for (e.g., 'John', 'Client approval')"
         />
         <div className="flex gap-3">
           <Button variant="primary" onClick={handleSaveEdit}>💾 Save</Button>

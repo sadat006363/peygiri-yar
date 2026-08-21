@@ -1,15 +1,14 @@
 export type Category = 'customer' | 'task' | 'cost' | 'idea';
-export type ItemStatus = 'pending' | 'active' | 'completed' | 'rejected';
+export type ItemStatus = 'pending' | 'active' | 'completed' | 'rejected' | 'needs_review';
 export type Priority = 'high' | 'medium' | 'low';
 export type CorrectionStatus = 'none' | 'ai_corrected' | 'user_corrected';
 
-// ✅ جدید: وضعیت‌های پیگیری مرحله‌ای
 export type FollowUpStatus = 
-  | 'waiting_for_reply'    // منتظر پاسخ
-  | 'awaiting_payment'     // منتظر پرداخت
-  | 'scheduled'            // برنامه‌ریزی‌شده
-  | 'needs_followup'       // نیاز به پیگیری مجدد
-  | 'completed';           // انجام‌شده
+  | 'waiting_for_reply'
+  | 'awaiting_payment'
+  | 'scheduled'
+  | 'needs_followup'
+  | 'completed';
 
 export interface Item {
   id?: number;
@@ -23,21 +22,25 @@ export interface Item {
   dueDate?: string;
   createdAt: Date;
   updatedAt: Date;
-  // فیلدهای اصلاح
   correctionStatus?: CorrectionStatus;
   confidence?: number;
   rawTranscript?: string;
   correctedTranscript?: string;
-  // ✅ جدید: فیلدهای Follow-up
+  
+  // ✅ جدید: فیلدهای عملیاتی
+  nextAction?: string;          // قدم بعدی
+  waitingFor?: string;          // منتظر چه کسی/چه چیزی
+  owner?: string;               // مسئول انجام
+  amount?: number;              // مبلغ (برای هزینه‌ها)
+  currency?: string;            // واحد پول
+  
   followUpStatus?: FollowUpStatus;
   followUpDate?: string | null;
-  // فیلدهای قبلی
   followUpCondition?: string | null;
   project?: string | null;
   tags?: string[];
 }
 
-// ✅ جدید: حافظه‌ی اصلاحات
 export interface CorrectionMemory {
   id?: number;
   originalText: string;

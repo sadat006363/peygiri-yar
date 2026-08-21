@@ -9,6 +9,7 @@ interface ItemState {
   activeItems: Item[];
   completedItems: Item[];
   rejectedItems: Item[];
+  needsReviewItems: Item[]; // ✅ جدید
   fetchItems: () => Promise<void>;
   addItem: (item: Omit<Item, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<number>;
   updateItem: (id: number, updates: Partial<Item>) => Promise<void>;
@@ -22,6 +23,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
   activeItems: [],
   completedItems: [],
   rejectedItems: [],
+  needsReviewItems: [], // ✅ جدید
 
   fetchItems: async () => {
     console.log('📊 fetchItems شروع شد.');
@@ -32,27 +34,13 @@ export const useItemStore = create<ItemState>((set, get) => ({
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
-      console.log('📊 همه‌ی آیتم‌ها:', sorted.map(i => ({
-        id: i.id,
-        status: i.status,
-        title: i.title,
-        dueDate: i.dueDate,
-        followUpStatus: i.followUpStatus,
-      })));
-
-      const pending = sorted.filter(i => i.status === 'pending');
-      const active = sorted.filter(i => i.status === 'active');
-      const completed = sorted.filter(i => i.status === 'completed');
-      const rejected = sorted.filter(i => i.status === 'rejected');
-
-      console.log(`📊 آمار: pending=${pending.length}, active=${active.length}, completed=${completed.length}, rejected=${rejected.length}`);
-
       set({
         items: sorted,
-        pendingItems: pending,
-        activeItems: active,
-        completedItems: completed,
-        rejectedItems: rejected,
+        pendingItems: sorted.filter(i => i.status === 'pending'),
+        activeItems: sorted.filter(i => i.status === 'active'),
+        completedItems: sorted.filter(i => i.status === 'completed'),
+        rejectedItems: sorted.filter(i => i.status === 'rejected'),
+        needsReviewItems: sorted.filter(i => i.status === 'needs_review'), // ✅ جدید
         isLoading: false,
       });
     } catch (error) {
@@ -78,8 +66,13 @@ export const useItemStore = create<ItemState>((set, get) => ({
         followUpDate: item.followUpDate ?? null,
         project: item.project ?? null,
         tags: item.tags || [],
-        // ✅ جدید: فیلدهای Follow-up با مقدار پیش‌فرض
         followUpStatus: item.followUpStatus || undefined,
+        // ✅ جدید: فیلدهای عملیاتی
+        nextAction: item.nextAction || undefined,
+        waitingFor: item.waitingFor || undefined,
+        owner: item.owner || undefined,
+        amount: item.amount || undefined,
+        currency: item.currency || undefined,
       };
       const savedId = await itemRepository.add(newItem);
       console.log(`✅ آیتم با ID ${savedId} اضافه شد.`);

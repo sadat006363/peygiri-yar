@@ -5,7 +5,11 @@ import { useItemStore } from '@/stores/itemStore';
 import { Item } from '@/lib/types';
 import { Card } from '../ui/Card';
 
-export const DailyBriefing = () => {
+interface DailyBriefingProps {
+  onItemClick?: (item: Item) => void; // ✅ جدید: تابع برای کلیک روی آیتم
+}
+
+export const DailyBriefing = ({ onItemClick }: DailyBriefingProps) => {
   const { items, fetchItems, isLoading } = useItemStore();
   const [briefing, setBriefing] = useState<{
     today: Item[];
@@ -25,7 +29,6 @@ export const DailyBriefing = () => {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-    // ✅ تغییر: استفاده از active به جای approved
     const activeItems = items.filter(i => i.status === 'active');
     const pending = items.filter(i => i.status === 'pending');
 
@@ -60,6 +63,16 @@ export const DailyBriefing = () => {
     );
   }
 
+  // ✅ تابع کمکی برای کلیک روی آیتم
+  const handleItemClick = (item: Item) => {
+    if (onItemClick) {
+      onItemClick(item);
+    } else {
+      // اگر تابعی ارائه نشده، حداقل لاگ بگیر
+      console.log('📋 کلیک روی آیتم:', item.title);
+    }
+  };
+
   return (
     <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100">
       <div className="space-y-2">
@@ -70,7 +83,13 @@ export const DailyBriefing = () => {
             <p className="text-sm font-semibold text-indigo-700">📅 Today ({briefing.today.length})</p>
             <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
               {briefing.today.slice(0, 5).map((item) => (
-                <li key={item.id}>{item.title}</li>
+                <li 
+                  key={item.id} 
+                  className="cursor-pointer hover:text-indigo-600 hover:underline transition-colors"
+                  onClick={() => handleItemClick(item)}
+                >
+                  {item.title}
+                </li>
               ))}
               {briefing.today.length > 5 && <li className="text-gray-400">... and {briefing.today.length - 5} more</li>}
             </ul>
@@ -82,7 +101,13 @@ export const DailyBriefing = () => {
             <p className="text-sm font-semibold text-orange-600">📆 Tomorrow ({briefing.tomorrow.length})</p>
             <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
               {briefing.tomorrow.slice(0, 3).map((item) => (
-                <li key={item.id}>{item.title}</li>
+                <li 
+                  key={item.id} 
+                  className="cursor-pointer hover:text-orange-600 hover:underline transition-colors"
+                  onClick={() => handleItemClick(item)}
+                >
+                  {item.title}
+                </li>
               ))}
               {briefing.tomorrow.length > 3 && <li className="text-gray-400">... and {briefing.tomorrow.length - 3} more</li>}
             </ul>

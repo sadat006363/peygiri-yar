@@ -21,17 +21,39 @@ export async function POST(req: NextRequest) {
     });
 
     const content = response.choices[0]?.message?.content || '{}';
-    const structured = JSON.parse(content);
+    const parsed = JSON.parse(content);
 
-    return NextResponse.json({
-      category: structured.category || 'idea',
-      title: structured.title || 'Untitled',
-      description: structured.description || text,
-      priority: structured.priority || 'medium',
-      dueDate: structured.dueDate || null,
-      nextAction: structured.nextAction || null,
-      waitingFor: structured.waitingFor || null,
-    });
+    // پشتیبانی از خروجی آرایه‌ای (در پرامپت جدید) و همچنین خروجی تکی (برای سازگاری)
+    let items: any[] = [];
+    if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
+      items = parsed.items;
+    } else {
+      // اگر خروجی قدیمی یک شیء تکی باشد، آن را به آرایه تبدیل می‌کنیم
+      items = [{
+        category: parsed.category || 'idea',
+        title: parsed.title || 'Untitled',
+        description: parsed.description || text,
+        priority: parsed.priority || 'medium',
+        dueDate: parsed.dueDate || null,
+        nextAction: parsed.nextAction || null,
+        waitingFor: parsed.waitingFor || null,
+        confidence: parsed.confidence || 0.9,
+      }];
+    }
+
+    // اطمینان از اینکه هر آیتم فیلدهای مورد نیاز را دارد
+    const sanitizedItems = items.map((item: any) => ({
+      category: item.category || 'idea',
+      title: item.title || 'Untitled',
+      description: item.description || text,
+      priority: item.priority || 'medium',
+      dueDate: item.dueDate || null,
+      nextAction: item.nextAction || null,
+      waitingFor: item.waitingFor || null,
+      confidence: item.confidence !== undefined ? item.confidence : 0.9,
+    }));
+
+    return NextResponse.json({ items: sanitizedItems });
   } catch (error: any) {
     console.error('Error in structure API:', error);
     return NextResponse.json(

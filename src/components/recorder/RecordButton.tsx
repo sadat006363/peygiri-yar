@@ -5,6 +5,7 @@ import { useRecorder } from '@/hooks/useRecorder';
 import { useAudioLevel } from '@/hooks/useAudioLevel';
 import { useItemStore } from '@/stores/itemStore';
 import { RecordingGuide } from './RecordingGuide';
+import { SplitPreview } from './SplitPreview';
 
 export const RecordButton = () => {
   const { isRecording, audioBlob, stream, startRecording, stopRecording, resetAudio, isRecordingRef } = useRecorder();
@@ -15,6 +16,10 @@ export const RecordButton = () => {
   const [recordingTime, setRecordingTime] = useState(0);
   const timeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isProcessingRef = useRef(false);
+
+  // State برای نمایش پیش‌نمایش Splitting
+  const [splitItems, setSplitItems] = useState<any[] | null>(null);
+  const [showSplitPreview, setShowSplitPreview] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -199,39 +204,34 @@ export const RecordButton = () => {
         throw new Error(errorText || 'Structuring failed');
       }
 
-      const structuredData = await structureRes.json();
-      console.log('✅ داده ساختاردهی‌شده:', structuredData);
+      const structureData = await structureRes.json();
+      const items = structureData.items || [];
+      console.log('✅ تعداد آیتم‌های تشخیص‌داده‌شده:', items.length);
 
-      // ✅ محاسبه confidence
-      const confidence = 1.0 - (noSpeechProb || 0);
-
-      // ✅ تصمیم‌گیری بر اساس سطح اطمینان
-      let status: 'pending' | 'needs_review' = 'pending';
-      if (confidence < 0.85) {
-        status = 'needs_review';
-        console.log(`⚠️ اطمینان پایین (${Math.round(confidence * 100)}%) → ارسال به Needs Review`);
+      if (items.length === 0) {
+        alert('❌ No clear items detected. Please try again.');
+        resetAudio();
+        setIsProcessing(false);
+        isProcessingRef.current = false;
+        return;
       }
 
-      console.log('📤 مرحله 3: ذخیره آیتم در دیتابیس...');
+      // اگر بیش از یک آیتم تشخیص داده شود، پیش‌نمایش Splitting را نشان بده
+      if (items.length > 1) {
+        console.log('✂️ چندین آیتم تشخیص داده شد، نمایش پیش‌نمایش...');
+        setSplitItems(items);
+        setShowSplitPreview(true);
+        setIsProcessing(false);
+        isProcessingRef.current = false;
+        // پردازش را متوقف می‌کنیم تا کاربر انتخاب کند
+        resetAudio();
+        return;
+      }
 
-      const savedId = await addItem({
-        rawText: rawText,
-        correctedText: rawText,
-        rawTranscript: rawText,
-        correctedTranscript: rawText,
-        correctionStatus: 'none',
-        confidence: confidence,
-        category: structuredData.category || 'idea',
-        title: structuredData.title || 'Untitled',
-        description: structuredData.description || rawText,
-        priority: structuredData.priority || 'medium',
-        dueDate: structuredData.dueDate || null,
-        nextAction: structuredData.nextAction || null,
-        waitingFor: structuredData.waitingFor || null,
-        status: status, // ✅ ارسال وضعیت تعیین‌شده
-      });
+      // اگر فقط یک آیتم باشد، مستقیماً ذخیره کن (با منطق قبلی)
+      await saveItem(items[0]);
 
-      console.log(`✅ آیتم با شناسه ${savedId} با موفقیت ذخیره شد.`);
+      console.log(`✅ آیتم با موفقیت ذخیره شد.`);
       resetAudio();
 
     } catch (error: any) {
@@ -243,6 +243,60 @@ export const RecordButton = () => {
       isProcessingRef.current = false;
       console.log('✅ پردازش به پایان رسید.');
     }
+  };
+
+  // تابع ذخیره‌سازی یک آیتم (با منطق قبلی)
+  const saveItem = async (itemData: any) => {
+    const confidence = itemData.confidence || 0.9;
+    let status: 'pending' | 'needs_review' = 'pending';
+    if (confidence < 0.85) {
+      status = 'needs_review';
+      console.log(`⚠️ اطمینان پایین (${Math.round(confidence * 100)}%) → ارسال به Needs Review`);
+    }
+
+    await addItem({
+      rawText: itemData.description || '',
+      correctedText: itemData.description || '',
+      rawTranscript: itemData.description || '',
+      correctedTranscript: itemData.description || '',
+      correctionStatus: 'none',
+      confidence: confidence,
+      category: itemData.category || 'idea',
+      title: itemData.title || 'Untitled',
+      description: itemData.description || '',
+      priority: itemData.priority || 'medium',
+      dueDate: itemData.dueDate || null,
+      nextAction: itemData.nextAction || null,
+      waitingFor: itemData.waitingFor || null,
+      status: status,
+    });
+  };
+
+  // توابع مربوط به SplitPreview
+  const handleSplitConfirm = async (confirmedItems: any[]) => {
+    setShowSplitPreview(false);
+    setIsProcessing(true);
+    try {
+      for (const item of confirmedItems) {
+        await saveItem(item);
+      }
+      console.log(`✅ ${confirmedItems.length} آیتم با موفقیت ذخیره شدند.`);
+      resetAudio();
+    } catch (error: any) {
+      console.error('❌ خطا در ذخیره‌سازی آیتم‌های جداگانه:', error);
+      alert('❌ Error saving items.');
+    } finally {
+      setIsProcessing(false);
+      setSplitItems(null);
+      isProcessingRef.current = false;
+    }
+  };
+
+  const handleSplitDiscard = () => {
+    setShowSplitPreview(false);
+    setSplitItems(null);
+    resetAudio();
+    isProcessingRef.current = false;
   };
 
   return (
@@ -287,6 +341,20 @@ export const RecordButton = () => {
             {audioLevel >= 0.8 && '📢 Too loud! Move away slightly'}
           </p>
         </div>
+      )}
+
+      {/* SplitPreview Modal */}
+      {splitItems && (
+        <SplitPreview
+          isOpen={showSplitPreview}
+          items={splitItems}
+          onClose={() => {
+            setShowSplitPreview(false);
+            setSplitItems(null);
+          }}
+          onConfirm={handleSplitConfirm}
+          onDiscard={handleSplitDiscard}
+        />
       )}
     </div>
   );

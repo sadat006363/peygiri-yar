@@ -7,6 +7,7 @@ import { ReviewQueue } from '@/components/review/ReviewQueue';
 import { HistoryList } from '@/components/history/HistoryList';
 import { TodayTasks } from '@/components/dashboard/TodayTasks';
 import { UnscheduledTasks } from '@/components/dashboard/UnscheduledTasks';
+import { DashboardSummary } from '@/components/dashboard/DashboardSummary';
 import { useItemStore } from '@/stores/itemStore';
 import { Card } from '@/components/ui/Card';
 
@@ -36,6 +37,9 @@ export default function Home() {
           <p className="text-gray-500 mt-2 text-lg">Smart voice assistant for tracking</p>
           <div className="w-24 h-1 bg-gradient-to-r from-indigo-400 to-purple-400 mx-auto mt-3 rounded-full"></div>
         </header>
+
+        {/* ===== DASHBOARD SUMMARY ===== */}
+        <DashboardSummary />
 
         <Card className="mb-8 bg-white/80 backdrop-blur-sm border border-white/50 shadow-xl">
           <div className="py-4">
@@ -79,7 +83,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* SECTION 3: Needs Review (NEW) */}
+        {/* SECTION 3: Needs Review */}
         <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
           <button
             onClick={() => toggleSection('review')}

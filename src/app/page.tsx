@@ -1,21 +1,30 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { RecordButton } from '@/components/recorder/RecordButton';
 import { ApprovalList } from '@/components/review/ApprovalList';
 import { HistoryList } from '@/components/history/HistoryList';
 import { TodayTasks } from '@/components/dashboard/TodayTasks';
 import { DailyBriefing } from '@/components/dashboard/DailyBriefing';
-import { AttentionToday } from '@/components/dashboard/AttentionToday';
 import { useItemStore } from '@/stores/itemStore';
 import { Card } from '@/components/ui/Card';
 
 export default function Home() {
   const { fetchItems } = useItemStore();
+  const [openSection, setOpenSection] = useState<string | null>('briefing'); // پیش‌فرض: بخش اول باز باشد
 
   useEffect(() => {
     fetchItems();
   }, []);
+
+  // تابع برای تغییر وضعیت باز/بسته
+  const toggleSection = (sectionId: string) => {
+    if (openSection === sectionId) {
+      setOpenSection(null); // اگر همان بخش باز است، آن را ببند
+    } else {
+      setOpenSection(sectionId); // در غیر این صورت، بخش جدید را باز کن
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -36,42 +45,77 @@ export default function Home() {
           </div>
         </Card>
 
-        {/* ===== DAILY BRIEFING ===== */}
-        <section className="mb-10">
-          <DailyBriefing />
-        </section>
+        {/* ===== SECTION 1: Daily Briefing ===== */}
+        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+          <button
+            onClick={() => toggleSection('briefing')}
+            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <h2 className="text-lg font-bold text-gray-800">🌅 Daily Briefing</h2>
+            <span className="text-gray-500 text-xl">
+              {openSection === 'briefing' ? '▲' : '▼'}
+            </span>
+          </button>
+          {openSection === 'briefing' && (
+            <div className="p-4 bg-white">
+              <DailyBriefing />
+            </div>
+          )}
+        </div>
 
-        {/* ===== ATTENTION TODAY ===== */}
-        <section className="mb-10">
-          <AttentionToday />
-        </section>
+        {/* ===== SECTION 2: Your Tasks ===== */}
+        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+          <button
+            onClick={() => toggleSection('tasks')}
+            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <h2 className="text-lg font-bold text-gray-800">📋 Your Tasks</h2>
+            <span className="text-gray-500 text-xl">
+              {openSection === 'tasks' ? '▲' : '▼'}
+            </span>
+          </button>
+          {openSection === 'tasks' && (
+            <div className="p-4 bg-white">
+              <TodayTasks />
+            </div>
+          )}
+        </div>
 
-        {/* ===== TODAY & THIS WEEK TASKS ===== */}
-        <section className="mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-2xl">📋</span>
-            <h2 className="text-xl font-bold text-gray-700">Your Tasks</h2>
-          </div>
-          <TodayTasks />
-        </section>
+        {/* ===== SECTION 3: Pending Approval ===== */}
+        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+          <button
+            onClick={() => toggleSection('pending')}
+            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <h2 className="text-lg font-bold text-gray-800">⏳ Pending Approval</h2>
+            <span className="text-gray-500 text-xl">
+              {openSection === 'pending' ? '▲' : '▼'}
+            </span>
+          </button>
+          {openSection === 'pending' && (
+            <div className="p-4 bg-white">
+              <ApprovalList />
+            </div>
+          )}
+        </div>
 
-        {/* ===== PENDING APPROVAL ===== */}
-        <section className="mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-2xl">⏳</span>
-            <h2 className="text-xl font-bold text-gray-700">Pending Approval</h2>
-          </div>
-          <ApprovalList />
-        </section>
-
-        {/* ===== HISTORY ===== */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-2xl">📜</span>
-            <h2 className="text-xl font-bold text-gray-700">History</h2>
-          </div>
-          <HistoryList />
-        </section>
+        {/* ===== SECTION 4: History ===== */}
+        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+          <button
+            onClick={() => toggleSection('history')}
+            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <h2 className="text-lg font-bold text-gray-800">📜 History</h2>
+            <span className="text-gray-500 text-xl">
+              {openSection === 'history' ? '▲' : '▼'}
+            </span>
+          </button>
+          {openSection === 'history' && (
+            <div className="p-4 bg-white">
+              <HistoryList />
+            </div>
+          )}
+        </div>
 
         {/* ===== FOOTER ===== */}
         <footer className="text-center text-xs text-gray-400 mt-12 border-t border-gray-200 pt-6">

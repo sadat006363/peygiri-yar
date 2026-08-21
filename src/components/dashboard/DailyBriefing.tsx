@@ -6,7 +6,7 @@ import { Item } from '@/lib/types';
 import { Card } from '../ui/Card';
 
 interface DailyBriefingProps {
-  onItemClick?: (item: Item) => void; // ✅ جدید: تابع برای کلیک روی آیتم
+  onItemClick?: (item: Item) => void;
 }
 
 export const DailyBriefing = ({ onItemClick }: DailyBriefingProps) => {
@@ -22,21 +22,42 @@ export const DailyBriefing = ({ onItemClick }: DailyBriefingProps) => {
   }, []);
 
   useEffect(() => {
-    if (items.length === 0) return;
+    if (items.length === 0) {
+      console.log('📊 DailyBriefing: آیتمی وجود ندارد.');
+      return;
+    }
+
+    console.log('📊 DailyBriefing: تعداد کل آیتم‌ها:', items.length);
+    console.log('📊 DailyBriefing: آیتم‌ها:', items.map(i => ({
+      title: i.title,
+      status: i.status,
+      dueDate: i.dueDate,
+    })));
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
+    console.log('📅 Today:', today.toISOString().split('T')[0]);
+    console.log('📆 Tomorrow:', tomorrow.toISOString().split('T')[0]);
+
     const activeItems = items.filter(i => i.status === 'active');
     const pending = items.filter(i => i.status === 'pending');
 
+    console.log('📊 آیتم‌های active:', activeItems.length);
+    console.log('📊 آیتم‌های pending:', pending.length);
+
     const todayList = activeItems.filter(i => {
-      if (!i.dueDate) return false;
+      if (!i.dueDate) {
+        console.log('⚠️ آیتم بدون dueDate:', i.title);
+        return false;
+      }
       const due = new Date(i.dueDate);
       due.setHours(0, 0, 0, 0);
-      return due.getTime() === today.getTime();
+      const isToday = due.getTime() === today.getTime();
+      console.log(`📅 ${i.title}: dueDate=${i.dueDate}, isToday=${isToday}`);
+      return isToday;
     });
 
     const tomorrowList = activeItems.filter(i => {
@@ -45,6 +66,9 @@ export const DailyBriefing = ({ onItemClick }: DailyBriefingProps) => {
       due.setHours(0, 0, 0, 0);
       return due.getTime() === tomorrow.getTime();
     });
+
+    console.log('📅 امروز:', todayList.length, 'آیتم');
+    console.log('📆 فردا:', tomorrowList.length, 'آیتم');
 
     setBriefing({
       today: todayList,
@@ -63,12 +87,10 @@ export const DailyBriefing = ({ onItemClick }: DailyBriefingProps) => {
     );
   }
 
-  // ✅ تابع کمکی برای کلیک روی آیتم
   const handleItemClick = (item: Item) => {
     if (onItemClick) {
       onItemClick(item);
     } else {
-      // اگر تابعی ارائه نشده، حداقل لاگ بگیر
       console.log('📋 کلیک روی آیتم:', item.title);
     }
   };

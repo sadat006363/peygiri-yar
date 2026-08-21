@@ -13,7 +13,8 @@ import { Card } from '@/components/ui/Card';
 
 export default function Home() {
   const { fetchItems } = useItemStore();
-  const [openSection, setOpenSection] = useState<string | null>('today');
+  // ✅ پیش‌فرض: بخش Summary باز باشد
+  const [openSection, setOpenSection] = useState<string | null>('summary');
 
   useEffect(() => {
     fetchItems();
@@ -38,8 +39,23 @@ export default function Home() {
           <div className="w-24 h-1 bg-gradient-to-r from-indigo-400 to-purple-400 mx-auto mt-3 rounded-full"></div>
         </header>
 
-        {/* ===== DASHBOARD SUMMARY ===== */}
-        <DashboardSummary />
+        {/* ===== SECTION: Dashboard Summary ===== */}
+        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+          <button
+            onClick={() => toggleSection('summary')}
+            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <h2 className="text-lg font-bold text-gray-800">📊 Dashboard Summary</h2>
+            <span className="text-gray-500 text-xl">
+              {openSection === 'summary' ? '▲' : '▼'}
+            </span>
+          </button>
+          {openSection === 'summary' && (
+            <div className="p-4 bg-white">
+              <DashboardSummary />
+            </div>
+          )}
+        </div>
 
         <Card className="mb-8 bg-white/80 backdrop-blur-sm border border-white/50 shadow-xl">
           <div className="py-4">

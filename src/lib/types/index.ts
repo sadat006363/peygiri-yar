@@ -3,6 +3,14 @@ export type ItemStatus = 'pending' | 'active' | 'completed' | 'rejected';
 export type Priority = 'high' | 'medium' | 'low';
 export type CorrectionStatus = 'none' | 'ai_corrected' | 'user_corrected';
 
+// ✅ جدید: وضعیت‌های پیگیری مرحله‌ای
+export type FollowUpStatus = 
+  | 'waiting_for_reply'    // منتظر پاسخ
+  | 'awaiting_payment'     // منتظر پرداخت
+  | 'scheduled'            // برنامه‌ریزی‌شده
+  | 'needs_followup'       // نیاز به پیگیری مجدد
+  | 'completed';           // انجام‌شده
+
 export interface Item {
   id?: number;
   rawText: string;
@@ -20,9 +28,11 @@ export interface Item {
   confidence?: number;
   rawTranscript?: string;
   correctedTranscript?: string;
+  // ✅ جدید: فیلدهای Follow-up
+  followUpStatus?: FollowUpStatus;
+  followUpDate?: string | null;
   // فیلدهای قبلی
   followUpCondition?: string | null;
-  followUpDate?: string | null;
   project?: string | null;
   tags?: string[];
 }
@@ -30,10 +40,10 @@ export interface Item {
 // ✅ جدید: حافظه‌ی اصلاحات
 export interface CorrectionMemory {
   id?: number;
-  originalText: string;    // کلمه/عبارت اشتباه
-  correctedText: string;   // کلمه/عبارت اصلاح‌شده
-  userId?: string;         // برای آینده (وقتی احراز هویت اضافه شد)
-  usageCount: number;      // تعداد دفعات استفاده
+  originalText: string;
+  correctedText: string;
+  userId?: string;
+  usageCount: number;
   lastUsed: Date;
   createdAt: Date;
 }

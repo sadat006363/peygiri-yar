@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Item, Priority } from '@/lib/types';
+import { Item, Priority, FollowUpStatus } from '@/lib/types';
 import { useItemStore } from '@/stores/itemStore';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -44,6 +44,22 @@ const statusColors = {
   rejected: 'bg-red-100 text-red-700',
 };
 
+// ✅ جدید: برچسب‌های وضعیت Follow-up
+const followUpLabels: Record<FollowUpStatus, string> = {
+  waiting_for_reply: '⏳ Waiting for Reply',
+  awaiting_payment: '💰 Awaiting Payment',
+  scheduled: '📅 Scheduled',
+  needs_followup: '🔄 Needs Follow-up',
+  completed: '✅ Completed',
+};
+const followUpColors: Record<FollowUpStatus, string> = {
+  waiting_for_reply: 'bg-yellow-100 text-yellow-800',
+  awaiting_payment: 'bg-red-100 text-red-800',
+  scheduled: 'bg-blue-100 text-blue-800',
+  needs_followup: 'bg-orange-100 text-orange-800',
+  completed: 'bg-green-100 text-green-800',
+};
+
 export const ItemCard = ({ item }: { item: Item }) => {
   const { updateItem, deleteItem } = useItemStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -51,6 +67,13 @@ export const ItemCard = ({ item }: { item: Item }) => {
   const [editDesc, setEditDesc] = useState<string>(item.description ?? '');
   const [editPriority, setEditPriority] = useState<Priority>(item.priority);
   const [editDueDate, setEditDueDate] = useState<string>(item.dueDate ?? '');
+
+  // ✅ جدید: تغییر وضعیت Follow-up
+  const handleUpdateFollowUpStatus = async (status: FollowUpStatus) => {
+    if (item.id) {
+      await updateItem(item.id, { followUpStatus: status });
+    }
+  };
 
   const handleApprove = async () => {
     console.log('🟢 دکمه Approve کلیک شد.');
@@ -145,10 +168,31 @@ export const ItemCard = ({ item }: { item: Item }) => {
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColors[item.status]}`}>
               {statusLabels[item.status] || item.status}
             </span>
+            {/* ✅ جدید: نمایش وضعیت Follow-up */}
+            {item.status === 'active' && item.followUpStatus && (
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${followUpColors[item.followUpStatus]}`}>
+                {followUpLabels[item.followUpStatus]}
+              </span>
+            )}
           </div>
 
           <h4 className="font-bold text-gray-800 text-lg">{item.title}</h4>
           <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
+
+          {item.rawTranscript && item.correctedTranscript && item.rawTranscript !== item.correctedTranscript && (
+            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs text-gray-500">🗣️ Original: {item.rawTranscript}</p>
+              <p className="text-xs text-green-600">✨ Corrected: {item.correctedTranscript}</p>
+              {item.confidence && item.confidence < 0.85 && (
+                <p className="text-xs text-orange-600 mt-1">
+                  ⚠️ Low confidence ({Math.round(item.confidence * 100)}%). Please verify.
+                </p>
+              )}
+              {item.correctionStatus === 'ai_corrected' && (
+                <p className="text-xs text-blue-500 mt-1">🤖 AI corrected</p>
+              )}
+            </div>
+          )}
 
           {item.dueDate && (
             <div className="text-xs text-gray-500">
@@ -211,11 +255,53 @@ export const ItemCard = ({ item }: { item: Item }) => {
           )}
 
           {item.status === 'active' && (
-            <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100">
-              <Button variant="success" size="sm" onClick={handleComplete}>✅ Complete</Button>
-              <Button variant="secondary" size="sm" onClick={handleSnooze}>⏰ Snooze (+1d)</Button>
-              <Button variant="secondary" size="sm" onClick={() => setIsEditing(true)}>✎ Edit</Button>
-              <Button variant="danger" size="sm" onClick={handleDelete}>🗑 Delete</Button>
+            <div className="flex flex-col gap-2 mt-3 pt-2 border-t border-gray-100">
+              {/* ✅ جدید: دکمه‌های انتخاب وضعیت Follow-up */}
+              <div className="flex flex-wrap gap-1">
+                <Button 
+                  variant={item.followUpStatus === 'waiting_for_reply' ? 'primary' : 'secondary'} 
+                  size="sm" 
+                  onClick={() => handleUpdateFollowUpStatus('waiting_for_reply')}
+                >
+                  ⏳ Waiting
+                </Button>
+                <Button 
+                  variant={item.followUpStatus === 'awaiting_payment' ? 'primary' : 'secondary'} 
+                  size="sm" 
+                  onClick={() => handleUpdateFollowUpStatus('awaiting_payment')}
+                >
+                  💰 Payment
+                </Button>
+                <Button 
+                  variant={item.followUpStatus === 'scheduled' ? 'primary' : 'secondary'} 
+                  size="sm" 
+                  onClick={() => handleUpdateFollowUpStatus('scheduled')}
+                >
+                  📅 Scheduled
+                </Button>
+                <Button 
+                  variant={item.followUpStatus === 'needs_followup' ? 'primary' : 'secondary'} 
+                  size="sm" 
+                  onClick={() => handleUpdateFollowUpStatus('needs_followup')}
+                >
+                  🔄 Follow-up
+                </Button>
+                <Button 
+                  variant={item.followUpStatus === 'completed' ? 'success' : 'secondary'} 
+                  size="sm" 
+                  onClick={() => {
+                    handleUpdateFollowUpStatus('completed');
+                    handleComplete();
+                  }}
+                >
+                  ✅ Done
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" size="sm" onClick={handleSnooze}>⏰ Snooze (+1d)</Button>
+                <Button variant="secondary" size="sm" onClick={() => setIsEditing(true)}>✎ Edit</Button>
+                <Button variant="danger" size="sm" onClick={handleDelete}>🗑 Delete</Button>
+              </div>
             </div>
           )}
 

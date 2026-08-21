@@ -11,7 +11,15 @@ export const AttentionToday = () => {
     dueToday: Item[];
     overdue: Item[];
     awaiting: Item[];
-  }>({ dueToday: [], overdue: [], awaiting: [] });
+    needsFollowup: Item[];
+    awaitingPayment: Item[];
+  }>({
+    dueToday: [],
+    overdue: [],
+    awaiting: [],
+    needsFollowup: [],
+    awaitingPayment: [],
+  });
 
   useEffect(() => {
     fetchItems();
@@ -25,26 +33,42 @@ export const AttentionToday = () => {
     today.setHours(0, 0, 0, 0);
 
     const active = items.filter(i => i.status === 'active');
+
     const dueToday = active.filter(i => {
       if (!i.dueDate) return false;
       const due = new Date(i.dueDate);
       due.setHours(0, 0, 0, 0);
       return due.getTime() === today.getTime();
     });
+
     const overdue = active.filter(i => {
       if (!i.dueDate) return false;
       const due = new Date(i.dueDate);
       due.setHours(0, 0, 0, 0);
       return due.getTime() < today.getTime();
     });
+
     const awaiting = active.filter(i => i.followUpCondition && i.followUpCondition.length > 0);
 
-    setAttentionItems({ dueToday, overdue, awaiting });
+    // ✅ جدید: آیتم‌های نیاز به پیگیری و منتظر پرداخت
+    const needsFollowup = active.filter(i => i.followUpStatus === 'needs_followup');
+    const awaitingPayment = active.filter(i => i.followUpStatus === 'awaiting_payment');
+
+    setAttentionItems({
+      dueToday,
+      overdue,
+      awaiting,
+      needsFollowup,
+      awaitingPayment,
+    });
   }, [items]);
 
   if (isLoading) return <p className="text-gray-400 text-center py-4">Loading...</p>;
 
-  const total = attentionItems.dueToday.length + attentionItems.overdue.length + attentionItems.awaiting.length;
+  const total = attentionItems.dueToday.length + attentionItems.overdue.length + 
+                attentionItems.awaiting.length + attentionItems.needsFollowup.length +
+                attentionItems.awaitingPayment.length;
+
   if (total === 0) {
     return (
       <Card className="bg-green-50 border border-green-200">
@@ -72,6 +96,26 @@ export const AttentionToday = () => {
             <p className="text-sm font-semibold text-yellow-700">🟡 Due today ({attentionItems.dueToday.length})</p>
             <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
               {attentionItems.dueToday.slice(0, 5).map((item) => (
+                <li key={item.id}>{item.title}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {attentionItems.awaitingPayment.length > 0 && (
+          <div className="bg-red-100/70 rounded-lg p-3 border-l-4 border-red-600">
+            <p className="text-sm font-semibold text-red-700">💰 Awaiting Payment ({attentionItems.awaitingPayment.length})</p>
+            <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
+              {attentionItems.awaitingPayment.slice(0, 5).map((item) => (
+                <li key={item.id}>{item.title}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {attentionItems.needsFollowup.length > 0 && (
+          <div className="bg-orange-100/70 rounded-lg p-3 border-l-4 border-orange-500">
+            <p className="text-sm font-semibold text-orange-700">🔄 Needs Follow-up ({attentionItems.needsFollowup.length})</p>
+            <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
+              {attentionItems.needsFollowup.slice(0, 5).map((item) => (
                 <li key={item.id}>{item.title}</li>
               ))}
             </ul>

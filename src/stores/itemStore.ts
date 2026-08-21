@@ -28,7 +28,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ isLoading: true });
     try {
       const allItems = await itemRepository.getAll();
-      // ✅ استفاده از new Date برای sort
       const sorted = allItems.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
@@ -38,6 +37,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
         status: i.status,
         title: i.title,
         dueDate: i.dueDate,
+        followUpStatus: i.followUpStatus,
       })));
 
       const pending = sorted.filter(i => i.status === 'pending');
@@ -61,7 +61,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
     }
   },
 
-  // ✅ addItem باید ID آیتم ذخیره‌شده را برگرداند
   addItem: async (item: Omit<Item, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Promise<number> => {
     console.log('📤 addItem فراخوانی شد:', item);
     try {
@@ -79,6 +78,8 @@ export const useItemStore = create<ItemState>((set, get) => ({
         followUpDate: item.followUpDate ?? null,
         project: item.project ?? null,
         tags: item.tags || [],
+        // ✅ جدید: فیلدهای Follow-up با مقدار پیش‌فرض
+        followUpStatus: item.followUpStatus || undefined,
       };
       const savedId = await itemRepository.add(newItem);
       console.log(`✅ آیتم با ID ${savedId} اضافه شد.`);

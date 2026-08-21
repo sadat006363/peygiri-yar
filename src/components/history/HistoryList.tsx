@@ -11,7 +11,6 @@ export const HistoryList = () => {
     fetchItems();
   }, []);
 
-  // همه‌ی آیتم‌ها به جز pending
   const historyItems = items.filter(i => i.status !== 'pending');
 
   if (isLoading) return <p className="text-gray-400 text-center py-4">Loading...</p>;

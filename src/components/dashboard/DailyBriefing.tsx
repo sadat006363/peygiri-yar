@@ -14,50 +14,30 @@ export const DailyBriefing = ({ onItemClick }: DailyBriefingProps) => {
   const [briefing, setBriefing] = useState<{
     today: Item[];
     tomorrow: Item[];
+    unscheduled: Item[];    // ✅ جدید: آیتم‌های بدون تاریخ
     totalPending: number;
-  }>({ today: [], tomorrow: [], totalPending: 0 });
+  }>({ today: [], tomorrow: [], unscheduled: [], totalPending: 0 });
 
   useEffect(() => {
     fetchItems();
   }, []);
 
   useEffect(() => {
-    if (items.length === 0) {
-      console.log('📊 DailyBriefing: آیتمی وجود ندارد.');
-      return;
-    }
-
-    console.log('📊 DailyBriefing: تعداد کل آیتم‌ها:', items.length);
-    console.log('📊 DailyBriefing: آیتم‌ها:', items.map(i => ({
-      title: i.title,
-      status: i.status,
-      dueDate: i.dueDate,
-    })));
+    if (items.length === 0) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-    console.log('📅 Today:', today.toISOString().split('T')[0]);
-    console.log('📆 Tomorrow:', tomorrow.toISOString().split('T')[0]);
-
     const activeItems = items.filter(i => i.status === 'active');
     const pending = items.filter(i => i.status === 'pending');
 
-    console.log('📊 آیتم‌های active:', activeItems.length);
-    console.log('📊 آیتم‌های pending:', pending.length);
-
     const todayList = activeItems.filter(i => {
-      if (!i.dueDate) {
-        console.log('⚠️ آیتم بدون dueDate:', i.title);
-        return false;
-      }
+      if (!i.dueDate) return false;
       const due = new Date(i.dueDate);
       due.setHours(0, 0, 0, 0);
-      const isToday = due.getTime() === today.getTime();
-      console.log(`📅 ${i.title}: dueDate=${i.dueDate}, isToday=${isToday}`);
-      return isToday;
+      return due.getTime() === today.getTime();
     });
 
     const tomorrowList = activeItems.filter(i => {
@@ -67,19 +47,20 @@ export const DailyBriefing = ({ onItemClick }: DailyBriefingProps) => {
       return due.getTime() === tomorrow.getTime();
     });
 
-    console.log('📅 امروز:', todayList.length, 'آیتم');
-    console.log('📆 فردا:', tomorrowList.length, 'آیتم');
+    // ✅ جدید: آیتم‌های active بدون تاریخ سررسید
+    const unscheduledList = activeItems.filter(i => !i.dueDate);
 
     setBriefing({
       today: todayList,
       tomorrow: tomorrowList,
+      unscheduled: unscheduledList,
       totalPending: pending.length,
     });
   }, [items]);
 
   if (isLoading) return <p className="text-gray-400 text-center py-4">Loading briefing...</p>;
 
-  if (briefing.today.length === 0 && briefing.tomorrow.length === 0 && briefing.totalPending === 0) {
+  if (briefing.today.length === 0 && briefing.tomorrow.length === 0 && briefing.unscheduled.length === 0 && briefing.totalPending === 0) {
     return (
       <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100">
         <p className="text-gray-500 text-center py-4">🌅 You're all caught up! No tasks for today.</p>
@@ -132,6 +113,25 @@ export const DailyBriefing = ({ onItemClick }: DailyBriefingProps) => {
                 </li>
               ))}
               {briefing.tomorrow.length > 3 && <li className="text-gray-400">... and {briefing.tomorrow.length - 3} more</li>}
+            </ul>
+          </div>
+        )}
+
+        {/* ✅ جدید: نمایش آیتم‌های بدون تاریخ */}
+        {briefing.unscheduled.length > 0 && (
+          <div className="bg-gray-100/70 rounded-lg p-3 border border-gray-200">
+            <p className="text-sm font-semibold text-gray-600">📌 Unscheduled ({briefing.unscheduled.length})</p>
+            <ul className="text-sm text-gray-700 mt-1 list-disc list-inside">
+              {briefing.unscheduled.slice(0, 5).map((item) => (
+                <li 
+                  key={item.id} 
+                  className="cursor-pointer hover:text-gray-800 hover:underline transition-colors"
+                  onClick={() => handleItemClick(item)}
+                >
+                  {item.title} <span className="text-xs text-gray-400">(no due date)</span>
+                </li>
+              ))}
+              {briefing.unscheduled.length > 5 && <li className="text-gray-400">... and {briefing.unscheduled.length - 5} more</li>}
             </ul>
           </div>
         )}

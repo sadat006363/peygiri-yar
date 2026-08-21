@@ -20,15 +20,15 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await audioFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // ✅ آپلود فایل (فقط یک آرگومان: بافر)
+    // آپلود فایل (فقط یک آرگومان)
     const uploadUrl = await client.files.upload(buffer);
     console.log(`📤 فایل آپلود شد. URL: ${uploadUrl}`);
 
-    // ✅ درخواست ترنسکریپشن
+    // ✅ استفاده از speech_models به جای speech_model
     const transcript = await client.transcripts.create({
       audio_url: uploadUrl,
       language_code: 'fa',
-      speech_model: 'best',
+      speech_models: ['universal-2'], // یا ['universal-3-5-pro', 'universal-2']
     });
 
     console.log(`📝 درخواست ترنسکریپشن ثبت شد. ID: ${transcript.id}`);

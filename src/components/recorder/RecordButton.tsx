@@ -135,16 +135,17 @@ export const RecordButton = () => {
     setIsProcessing(true);
 
     try {
-      console.log('📤 مرحله 1: ارسال فایل صوتی به /api/transcribe...');
+      console.log('📤 مرحله 1: ارسال فایل صوتی به /api/transcribe-assembly...');
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
 
-      const transcribeRes = await fetch('/api/transcribe', {
+      // ✅ استفاده از AssemblyAI به جای Whisper
+      const transcribeRes = await fetch('/api/transcribe-assembly', {
         method: 'POST',
         body: formData,
       });
 
-      console.log(`📥 پاسخ /api/transcribe: status ${transcribeRes.status}`);
+      console.log(`📥 پاسخ /api/transcribe-assembly: status ${transcribeRes.status}`);
 
       if (!transcribeRes.ok) {
         const errorText = await transcribeRes.text();
@@ -153,21 +154,20 @@ export const RecordButton = () => {
       }
 
       const transcribeData = await transcribeRes.json();
-      console.log('📊 اطلاعات کامل Whisper:', {
+      console.log('📊 اطلاعات کامل AssemblyAI:', {
         text: transcribeData.text,
         duration: transcribeData.duration,
         language: transcribeData.language,
-        no_speech_prob: transcribeData.no_speech_prob,
-        avg_logprob: transcribeData.avg_logprob,
-        segments: transcribeData.segments?.length || 0,
+        confidence: transcribeData.confidence,
       });
 
       const rawText = transcribeData.text || '';
-      const noSpeechProb = transcribeData.no_speech_prob;
+      const confidence = transcribeData.confidence || 0;
 
-      if (noSpeechProb !== undefined && noSpeechProb > 0.8) {
-        console.warn(`⚠️ تشخیص گفتار ضعیف: noSpeechProb=${noSpeechProb}`);
-        alert('❌ We received audio but couldn\'t understand speech. Please try again speaking more clearly.');
+      // ✅ بررسی کیفیت تشخیص (AssemblyAI confidence)
+      if (confidence < 0.6) {
+        console.warn(`⚠️ کیفیت تشخیص پایین: confidence=${confidence}`);
+        alert('❌ Audio quality is low. Please speak more clearly or try again.');
         resetAudio();
         setIsProcessing(false);
         isProcessingRef.current = false;
@@ -183,7 +183,7 @@ export const RecordButton = () => {
         return;
       }
 
-      console.log('✅ متن خام از Whisper:', rawText);
+      console.log('✅ متن خام از AssemblyAI:', rawText);
 
       console.log('📤 مرحله 2: ارسال متن به /api/structure...');
       const structureRes = await fetch('/api/structure', {
@@ -210,7 +210,7 @@ export const RecordButton = () => {
         rawTranscript: rawText,
         correctedTranscript: rawText,
         correctionStatus: 'none',
-        confidence: 1.0,
+        confidence: confidence,
         category: structuredData.category || 'idea',
         title: structuredData.title || 'Untitled',
         description: structuredData.description || rawText,

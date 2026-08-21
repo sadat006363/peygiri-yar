@@ -27,12 +27,12 @@ export interface Item {
   rawTranscript?: string;
   correctedTranscript?: string;
   
-  // ✅ جدید: فیلدهای عملیاتی
-  nextAction?: string;          // قدم بعدی
-  waitingFor?: string;          // منتظر چه کسی/چه چیزی
-  owner?: string;               // مسئول انجام
-  amount?: number;              // مبلغ (برای هزینه‌ها)
-  currency?: string;            // واحد پول
+  // ✅ فیلدهای عملیاتی
+  nextAction?: string;
+  waitingFor?: string;
+  owner?: string;
+  amount?: number;
+  currency?: string;
   
   followUpStatus?: FollowUpStatus;
   followUpDate?: string | null;

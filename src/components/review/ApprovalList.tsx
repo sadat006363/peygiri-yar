@@ -19,7 +19,7 @@ export const ApprovalList = () => {
 
   return (
     <div className="space-y-4">
-      <h3 className="font-bold text-gray-700">📋 Pending ({pendingItems.length})</h3>
+      <h3 className="font-bold text-gray-700">⏳ Pending ({pendingItems.length})</h3>
       {pendingItems.map((item) => (
         <ItemCard key={item.id} item={item} />
       ))}

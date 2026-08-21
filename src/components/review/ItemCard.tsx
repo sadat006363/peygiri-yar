@@ -182,7 +182,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
           <h4 className="font-bold text-gray-800 text-lg">{item.title}</h4>
           <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
 
-          {/* ✅ نمایش فیلدهای جدید */}
           {item.nextAction && (
             <div className="text-xs text-green-600 font-medium">
               🎯 Next Action: {item.nextAction}
@@ -359,7 +358,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
           className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
           placeholder="Due Date"
         />
-        {/* ✅ جدید: فیلدهای عملیاتی */}
         <input
           type="text"
           value={editNextAction}

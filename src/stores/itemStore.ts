@@ -9,9 +9,9 @@ interface ItemState {
   activeItems: Item[];
   completedItems: Item[];
   rejectedItems: Item[];
-  needsReviewItems: Item[]; // ✅ جدید
+  needsReviewItems: Item[];
   fetchItems: () => Promise<void>;
-  addItem: (item: Omit<Item, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<number>;
+  addItem: (item: Omit<Item, 'id' | 'createdAt' | 'updatedAt'> & { status?: ItemStatus }) => Promise<number>;
   updateItem: (id: number, updates: Partial<Item>) => Promise<void>;
   deleteItem: (id: number) => Promise<void>;
 }
@@ -23,7 +23,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
   activeItems: [],
   completedItems: [],
   rejectedItems: [],
-  needsReviewItems: [], // ✅ جدید
+  needsReviewItems: [],
 
   fetchItems: async () => {
     console.log('📊 fetchItems شروع شد.');
@@ -40,7 +40,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
         activeItems: sorted.filter(i => i.status === 'active'),
         completedItems: sorted.filter(i => i.status === 'completed'),
         rejectedItems: sorted.filter(i => i.status === 'rejected'),
-        needsReviewItems: sorted.filter(i => i.status === 'needs_review'), // ✅ جدید
+        needsReviewItems: sorted.filter(i => i.status === 'needs_review'),
         isLoading: false,
       });
     } catch (error) {
@@ -49,13 +49,16 @@ export const useItemStore = create<ItemState>((set, get) => ({
     }
   },
 
-  addItem: async (item: Omit<Item, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Promise<number> => {
+  addItem: async (item: Omit<Item, 'id' | 'createdAt' | 'updatedAt'> & { status?: ItemStatus }): Promise<number> => {
     console.log('📤 addItem فراخوانی شد:', item);
     try {
       const now = new Date();
+      // اگر status در ورودی وجود داشت، از آن استفاده کن، در غیر این صورت پیش‌فرض 'pending'
+      const finalStatus = item.status || 'pending';
+      
       const newItem: Omit<Item, 'id'> = {
         ...item,
-        status: 'pending',
+        status: finalStatus,
         createdAt: now,
         updatedAt: now,
         rawTranscript: item.rawTranscript || item.rawText,
@@ -67,7 +70,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
         project: item.project ?? null,
         tags: item.tags || [],
         followUpStatus: item.followUpStatus || undefined,
-        // ✅ جدید: فیلدهای عملیاتی
         nextAction: item.nextAction || undefined,
         waitingFor: item.waitingFor || undefined,
         owner: item.owner || undefined,

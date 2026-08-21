@@ -202,24 +202,33 @@ export const RecordButton = () => {
       const structuredData = await structureRes.json();
       console.log('✅ داده ساختاردهی‌شده:', structuredData);
 
+      // ✅ محاسبه confidence
+      const confidence = 1.0 - (noSpeechProb || 0);
+
+      // ✅ تصمیم‌گیری بر اساس سطح اطمینان
+      let status: 'pending' | 'needs_review' = 'pending';
+      if (confidence < 0.85) {
+        status = 'needs_review';
+        console.log(`⚠️ اطمینان پایین (${Math.round(confidence * 100)}%) → ارسال به Needs Review`);
+      }
+
       console.log('📤 مرحله 3: ذخیره آیتم در دیتابیس...');
 
-      // ✅ ارسال فیلدهای جدید به addItem
       const savedId = await addItem({
         rawText: rawText,
         correctedText: rawText,
         rawTranscript: rawText,
         correctedTranscript: rawText,
         correctionStatus: 'none',
-        confidence: 1.0 - (noSpeechProb || 0),
+        confidence: confidence,
         category: structuredData.category || 'idea',
         title: structuredData.title || 'Untitled',
         description: structuredData.description || rawText,
         priority: structuredData.priority || 'medium',
         dueDate: structuredData.dueDate || null,
-        // ✅ فیلدهای جدید (مرحله ۲)
         nextAction: structuredData.nextAction || null,
         waitingFor: structuredData.waitingFor || null,
+        status: status, // ✅ ارسال وضعیت تعیین‌شده
       });
 
       console.log(`✅ آیتم با شناسه ${savedId} با موفقیت ذخیره شد.`);

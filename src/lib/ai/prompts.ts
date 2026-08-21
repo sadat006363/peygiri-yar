@@ -8,12 +8,17 @@ Extract the following fields:
 4. "priority": one of ["high", "medium", "low"] based on urgency
 5. "dueDate": ISO date string (YYYY-MM-DD) if a date is mentioned, otherwise null
 6. "nextAction": the next logical step or action to take (e.g., "call John", "send invoice", "follow up with client")
-7. "waitingFor": who or what is being waited for (e.g., "John's reply", "client approval", "invoice from vendor"). If nothing is being waited for, set to null.
+7. "waitingFor": who or what is being waited for (e.g., "John's reply", "client approval", "invoice from vendor").
+
+**IMPORTANT for waitingFor:**
+- Only set this field if the user explicitly mentions waiting, expecting, or awaiting something/someone.
+- If the user says phrases like "waiting for", "expecting", "I'm waiting", "awaiting", "I need to hear back from", "they need to", "they should", extract what/who they are waiting for.
+- If there is NO mention of waiting, set to null.
 
 Return ONLY a JSON object with these keys. No extra text.
 
 Example input:
-"I need to send the proposal to Sarah by Thursday and I'm waiting for her feedback."
+"Send the proposal to Sarah by Thursday, I'm waiting for her feedback."
 Example output:
 {
   "category": "customer",
@@ -23,6 +28,19 @@ Example output:
   "dueDate": "2026-08-24",
   "nextAction": "Send proposal to Sarah",
   "waitingFor": "Sarah's feedback"
+}
+
+Example input (no waiting):
+"Call Mike tomorrow morning about the project."
+Example output:
+{
+  "category": "task",
+  "title": "Call Mike about project",
+  "description": "Call Mike tomorrow morning about the project.",
+  "priority": "high",
+  "dueDate": "2026-08-22",
+  "nextAction": "Call Mike",
+  "waitingFor": null
 }
 `;
 

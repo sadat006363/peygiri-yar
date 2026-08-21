@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { RecordButton } from '@/components/recorder/RecordButton';
 import { ApprovalList } from '@/components/review/ApprovalList';
+import { ReviewQueue } from '@/components/review/ReviewQueue';
 import { HistoryList } from '@/components/history/HistoryList';
 import { TodayTasks } from '@/components/dashboard/TodayTasks';
 import { UnscheduledTasks } from '@/components/dashboard/UnscheduledTasks';
@@ -11,7 +12,7 @@ import { Card } from '@/components/ui/Card';
 
 export default function Home() {
   const { fetchItems } = useItemStore();
-  const [openSection, setOpenSection] = useState<string | null>('pending');
+  const [openSection, setOpenSection] = useState<string | null>('today');
 
   useEffect(() => {
     fetchItems();
@@ -36,32 +37,13 @@ export default function Home() {
           <div className="w-24 h-1 bg-gradient-to-r from-indigo-400 to-purple-400 mx-auto mt-3 rounded-full"></div>
         </header>
 
-        {/* Recorder */}
         <Card className="mb-8 bg-white/80 backdrop-blur-sm border border-white/50 shadow-xl">
           <div className="py-4">
             <RecordButton />
           </div>
         </Card>
 
-        {/* SECTION 1: Pending Approval */}
-        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
-          <button
-            onClick={() => toggleSection('pending')}
-            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-          >
-            <h2 className="text-lg font-bold text-gray-800">⏳ Pending Approval</h2>
-            <span className="text-gray-500 text-xl">
-              {openSection === 'pending' ? '▲' : '▼'}
-            </span>
-          </button>
-          {openSection === 'pending' && (
-            <div className="p-4 bg-white">
-              <ApprovalList />
-            </div>
-          )}
-        </div>
-
-        {/* SECTION 2: Today's Tasks */}
+        {/* SECTION 1: Today's Tasks */}
         <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
           <button
             onClick={() => toggleSection('today')}
@@ -79,7 +61,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* SECTION 3: Unscheduled */}
+        {/* SECTION 2: Unscheduled */}
         <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
           <button
             onClick={() => toggleSection('unscheduled')}
@@ -97,7 +79,43 @@ export default function Home() {
           )}
         </div>
 
-        {/* SECTION 4: History */}
+        {/* SECTION 3: Needs Review (NEW) */}
+        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+          <button
+            onClick={() => toggleSection('review')}
+            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <h2 className="text-lg font-bold text-gray-800">🔍 Needs Review</h2>
+            <span className="text-gray-500 text-xl">
+              {openSection === 'review' ? '▲' : '▼'}
+            </span>
+          </button>
+          {openSection === 'review' && (
+            <div className="p-4 bg-white">
+              <ReviewQueue />
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 4: Pending Approval */}
+        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+          <button
+            onClick={() => toggleSection('pending')}
+            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <h2 className="text-lg font-bold text-gray-800">⏳ Pending Approval</h2>
+            <span className="text-gray-500 text-xl">
+              {openSection === 'pending' ? '▲' : '▼'}
+            </span>
+          </button>
+          {openSection === 'pending' && (
+            <div className="p-4 bg-white">
+              <ApprovalList />
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 5: History */}
         <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
           <button
             onClick={() => toggleSection('history')}

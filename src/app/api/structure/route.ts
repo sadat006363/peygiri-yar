@@ -23,13 +23,14 @@ export async function POST(req: NextRequest) {
     const content = response.choices[0]?.message?.content || '{}';
     const structured = JSON.parse(content);
 
-    // مقداردهی پیش‌فرض برای فیلدهای جدید
     return NextResponse.json({
       category: structured.category || 'idea',
       title: structured.title || 'Untitled',
       description: structured.description || text,
       priority: structured.priority || 'medium',
       dueDate: structured.dueDate || null,
+      nextAction: structured.nextAction || null,
+      waitingFor: structured.waitingFor || null,
     });
   } catch (error: any) {
     console.error('Error in structure API:', error);

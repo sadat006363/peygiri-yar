@@ -92,7 +92,6 @@ export const RecordButton = () => {
     return 'bg-red-500';
   };
 
-  // ✅ تشخیص نویز و جملات پیش‌فرض
   const isNoise = (text: string): boolean => {
     const trimmed = text.trim().toLowerCase();
     if (trimmed.length < 5) return true;
@@ -139,7 +138,6 @@ export const RecordButton = () => {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
 
-      // ✅ بازگشت به Whisper (مسیر قبلی)
       const transcribeRes = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
@@ -205,6 +203,8 @@ export const RecordButton = () => {
       console.log('✅ داده ساختاردهی‌شده:', structuredData);
 
       console.log('📤 مرحله 3: ذخیره آیتم در دیتابیس...');
+
+      // ✅ ارسال فیلدهای جدید به addItem
       const savedId = await addItem({
         rawText: rawText,
         correctedText: rawText,
@@ -217,6 +217,9 @@ export const RecordButton = () => {
         description: structuredData.description || rawText,
         priority: structuredData.priority || 'medium',
         dueDate: structuredData.dueDate || null,
+        // ✅ فیلدهای جدید (مرحله ۲)
+        nextAction: structuredData.nextAction || null,
+        waitingFor: structuredData.waitingFor || null,
       });
 
       console.log(`✅ آیتم با شناسه ${savedId} با موفقیت ذخیره شد.`);

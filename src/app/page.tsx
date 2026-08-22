@@ -14,7 +14,7 @@ import { useItemStore } from '@/stores/itemStore';
 import { Card } from '@/components/ui/Card';
 
 export default function Home() {
-  const { fetchItems } = useItemStore();
+  const { fetchItems, pendingItems } = useItemStore();
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -49,6 +49,8 @@ export default function Home() {
       </main>
     );
   }
+
+  const hasPending = pendingItems.length > 0;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -149,19 +151,36 @@ export default function Home() {
         </div>
         */}
 
-        {/* SECTION 4: Pending Approval */}
-        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+        {/* SECTION 4: Pending Approval (با چشمک‌زن) */}
+        <div className={`border rounded-lg mb-4 overflow-hidden bg-white shadow-sm transition-all duration-300 ${
+          hasPending ? 'border-yellow-400 ring-2 ring-yellow-300 ring-opacity-50' : 'border-gray-200'
+        }`}>
           <button
             onClick={() => toggleSection('pending')}
-            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+            className={`w-full flex justify-between items-center p-4 transition-colors ${
+              hasPending ? 'bg-yellow-50 hover:bg-yellow-100' : 'bg-gray-50 hover:bg-gray-100'
+            }`}
           >
-            <h2 className="text-lg font-bold text-gray-800">⏳ Pending Approval</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-bold text-gray-800">⏳ Pending Approval</h2>
+              {hasPending && (
+                <>
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                  </span>
+                  <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full animate-pulse">
+                    {pendingItems.length}
+                  </span>
+                </>
+              )}
+            </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'pending' ? '▲' : '▼'}
             </span>
           </button>
           {openSection === 'pending' && (
-            <div className="p-4 bg-white">
+            <div className="p-4 bg-white animate-fade-in">
               <ApprovalList />
             </div>
           )}

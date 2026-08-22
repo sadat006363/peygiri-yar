@@ -5,7 +5,6 @@ import { useRecorder } from '@/hooks/useRecorder';
 import { useAudioLevel } from '@/hooks/useAudioLevel';
 import { useItemStore } from '@/stores/itemStore';
 import { RecordingGuide } from './RecordingGuide';
-// import { SplitPreview } from './SplitPreview'; // غیرفعال برای MVP
 
 export const RecordButton = () => {
   const { isRecording, audioBlob, stream, startRecording, stopRecording, resetAudio, isRecordingRef } = useRecorder();
@@ -16,10 +15,6 @@ export const RecordButton = () => {
   const [recordingTime, setRecordingTime] = useState(0);
   const timeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isProcessingRef = useRef(false);
-
-  // State برای نمایش پیش‌نمایش Splitting (غیرفعال برای MVP)
-  // const [splitItems, setSplitItems] = useState<any[] | null>(null);
-  // const [showSplitPreview, setShowSplitPreview] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -122,7 +117,11 @@ export const RecordButton = () => {
     if (confidence < 0.85) {
       status = 'needs_review';
       console.log(`⚠️ اطمینان پایین (${Math.round(confidence * 100)}%) → ارسال به Needs Review`);
+    } else {
+      console.log(`✅ اطمینان بالا (${Math.round(confidence * 100)}%) → ارسال به Pending Approval`);
     }
+
+    console.log('📤 ذخیره آیتم با وضعیت:', status);
 
     await addItem({
       rawText: itemData.description || '',
@@ -138,11 +137,6 @@ export const RecordButton = () => {
       dueDate: itemData.dueDate || null,
       nextAction: itemData.nextAction || null,
       waitingFor: itemData.waitingFor || null,
-      // موجودیت‌ها (غیرفعال برای MVP)
-      // person: itemData.person || null,
-      // company: itemData.company || null,
-      // project: itemData.project || null,
-      // owner: itemData.owner || null,
       status: status,
     });
   };
@@ -247,29 +241,12 @@ export const RecordButton = () => {
         return;
       }
 
-      // ==========================================================
-      // Splitting هوشمند (غیرفعال برای MVP)
-      // به‌جای نمایش پیش‌نمایش، همه آیتم‌ها را مستقیماً ذخیره کن
-      // ==========================================================
+      // ذخیره‌ی همه‌ی آیتم‌ها (بدون Splitting Preview)
       for (const item of items) {
         await saveItem(item);
       }
       console.log(`✅ ${items.length} آیتم با موفقیت ذخیره شدند.`);
       resetAudio();
-
-      // بخش قبلی که SplitPreview را نشان می‌داد (کامنت شده)
-      /*
-      if (items.length > 1) {
-        console.log('✂️ چندین آیتم تشخیص داده شد، نمایش پیش‌نمایش...');
-        setSplitItems(items);
-        setShowSplitPreview(true);
-        setIsProcessing(false);
-        isProcessingRef.current = false;
-        resetAudio();
-        return;
-      }
-      await saveItem(items[0]);
-      */
 
     } catch (error: any) {
       console.error('❌ خطای کلی در handleSend:', error.message);
@@ -281,35 +258,6 @@ export const RecordButton = () => {
       console.log('✅ پردازش به پایان رسید.');
     }
   };
-
-  // توابع مربوط به SplitPreview (غیرفعال برای MVP)
-  /*
-  const handleSplitConfirm = async (confirmedItems: any[]) => {
-    setShowSplitPreview(false);
-    setIsProcessing(true);
-    try {
-      for (const item of confirmedItems) {
-        await saveItem(item);
-      }
-      console.log(`✅ ${confirmedItems.length} آیتم با موفقیت ذخیره شدند.`);
-      resetAudio();
-    } catch (error: any) {
-      console.error('❌ خطا در ذخیره‌سازی آیتم‌های جداگانه:', error);
-      alert('❌ Error saving items.');
-    } finally {
-      setIsProcessing(false);
-      setSplitItems(null);
-      isProcessingRef.current = false;
-    }
-  };
-
-  const handleSplitDiscard = () => {
-    setShowSplitPreview(false);
-    setSplitItems(null);
-    resetAudio();
-    isProcessingRef.current = false;
-  };
-  */
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -354,22 +302,6 @@ export const RecordButton = () => {
           </p>
         </div>
       )}
-
-      {/* کامپوننت SplitPreview (غیرفعال) */}
-      {/*
-      {splitItems && (
-        <SplitPreview
-          isOpen={showSplitPreview}
-          items={splitItems}
-          onClose={() => {
-            setShowSplitPreview(false);
-            setSplitItems(null);
-          }}
-          onConfirm={handleSplitConfirm}
-          onDiscard={handleSplitDiscard}
-        />
-      )}
-      */}
     </div>
   );
 };

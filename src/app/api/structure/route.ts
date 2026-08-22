@@ -10,10 +10,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'متن ورودی خالی است' }, { status: 400 });
     }
 
-    // ✅ دریافت تاریخ فعلی به‌صورت YYYY-MM-DD
-    const today = new Date();
-    const currentDate = today.toISOString().split('T')[0];
-    console.log('📅 تاریخ فعلی ارسال‌شده به GPT:', currentDate);
+    // ✅ دریافت تاریخ فعلی بر اساس منطقه زمانی محلی
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const currentDate = `${year}-${month}-${day}`;
+    console.log('📅 تاریخ فعلی (محلی):', currentDate);
 
     // ✅ جایگزینی {{currentDate}} در پرامپت
     const systemPrompt = STRUCTURE_SYSTEM_PROMPT.replace(
@@ -36,7 +39,6 @@ export async function POST(req: NextRequest) {
 
     console.log('📤 خروجی GPT:', parsed);
 
-    // ✅ بازگرداندن فیلدهای مورد نیاز
     return NextResponse.json({
       title: parsed.title || 'Untitled',
       description: parsed.description || text,

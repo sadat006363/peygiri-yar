@@ -6,7 +6,6 @@ import { Item } from '@/lib/types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 
-// ✅ تابع کمکی برای نمایش تاریخ به‌صورت خوانا
 const formatDate = (date: string) => {
   if (!date) return '';
   try {
@@ -35,8 +34,13 @@ export const TodayTasks = () => {
       return;
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    console.log('📅 تاریخ امروز (رشته):', todayStr);
+    // ✅ دریافت تاریخ امروز به‌صورت محلی (بدون UTC)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    console.log('📅 تاریخ امروز (محلی):', todayStr);
 
     const todayList = activeItems.filter(i => {
       if (!i.dueDate) return false;

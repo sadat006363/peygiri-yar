@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  MicrophoneIcon, 
-  CalendarDaysIcon, 
-  ClockIcon, 
-  CheckCircleIcon, 
+import {
+  MicrophoneIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  CheckCircleIcon,
   XCircleIcon,
   ListBulletIcon,
   ArrowPathIcon
@@ -21,7 +21,15 @@ import { useItemStore } from '@/stores/itemStore';
 import { Card } from '@/components/ui/Card';
 
 export default function Home() {
-  const { fetchItems, pendingItems } = useItemStore();
+  const { 
+    fetchItems, 
+    pendingItems, 
+    activeItems, 
+    completedItems, 
+    rejectedItems,
+    items 
+  } = useItemStore();
+  
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -37,6 +45,30 @@ export default function Home() {
     setOpenSection(prev => prev === sectionId ? null : sectionId);
   };
 
+  // محاسبه تعداد آیتم‌های Today
+  const getTodayTasksCount = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return activeItems.filter(i => {
+      if (!i.dueDate) return false;
+      const due = new Date(i.dueDate);
+      due.setHours(0, 0, 0, 0);
+      return due.getTime() === today.getTime();
+    }).length;
+  };
+
+  const todayTasksCount = getTodayTasksCount();
+  
+  // تعداد آیتم‌های History (همه‌ی آیتم‌ها به جز pending)
+  const historyCount = items.filter(i => i.status !== 'pending').length;
+
+  const hasPending = pendingItems.length > 0;
+
+  const sectionVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+  };
+
   if (!isMounted) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
@@ -47,13 +79,6 @@ export default function Home() {
       </main>
     );
   }
-
-  const hasPending = pendingItems.length > 0;
-
-  const sectionVariants = {
-    hidden: { opacity: 0, y: -10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-  };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -88,6 +113,11 @@ export default function Home() {
             <div className="flex items-center gap-2 text-gray-800">
               <CalendarDaysIcon className="w-6 h-6 text-indigo-600" />
               <h2 className="text-lg font-bold">Today's Tasks</h2>
+              {todayTasksCount > 0 && (
+                <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold leading-none text-white bg-indigo-500 rounded-full">
+                  {todayTasksCount}
+                </span>
+              )}
             </div>
             <motion.span
               animate={{ rotate: openSection === 'today' ? 180 : 0 }}
@@ -173,6 +203,11 @@ export default function Home() {
             <div className="flex items-center gap-2 text-gray-800">
               <ListBulletIcon className="w-6 h-6 text-purple-600" />
               <h2 className="text-lg font-bold">History</h2>
+              {historyCount > 0 && (
+                <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold leading-none text-white bg-purple-500 rounded-full">
+                  {historyCount}
+                </span>
+              )}
             </div>
             <motion.span
               animate={{ rotate: openSection === 'history' ? 180 : 0 }}
@@ -205,7 +240,7 @@ export default function Home() {
   );
 }
 
-// یک کامپوننت کوچک برای آیکون چپ‌راست (chevron)
+// کامپوننت آیکون چپ‌راست
 function ChevronUpDownIcon({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>

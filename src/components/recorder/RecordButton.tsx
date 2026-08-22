@@ -114,15 +114,8 @@ export const RecordButton = () => {
   };
 
   const saveItem = async (itemData: any) => {
-    const confidence = itemData.confidence || 0.9;
-    let status: 'pending' | 'needs_review' = 'pending';
-    if (confidence < 0.85) {
-      status = 'needs_review';
-      console.log(`⚠️ اطمینان پایین (${Math.round(confidence * 100)}%) → ارسال به Needs Review`);
-    } else {
-      console.log(`✅ اطمینان بالا (${Math.round(confidence * 100)}%) → ارسال به Pending Approval`);
-    }
-
+    // ✅ برای MVP، همیشه وضعیت را 'pending' تنظیم می‌کنیم
+    const status: 'pending' = 'pending';
     console.log('📤 ذخیره آیتم با وضعیت:', status);
 
     await addItem({
@@ -131,7 +124,7 @@ export const RecordButton = () => {
       rawTranscript: itemData.description || '',
       correctedTranscript: itemData.description || '',
       correctionStatus: 'none',
-      confidence: confidence,
+      confidence: itemData.confidence || 0.9,
       category: itemData.category || 'idea',
       title: itemData.title || 'Untitled',
       description: itemData.description || '',

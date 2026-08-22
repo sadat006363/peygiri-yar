@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { MicrophoneIcon, StopIcon } from '@heroicons/react/24/solid';
 import { useRecorder } from '@/hooks/useRecorder';
 import { useAudioLevel } from '@/hooks/useAudioLevel';
 import { useItemStore } from '@/stores/itemStore';
@@ -241,7 +243,6 @@ export const RecordButton = () => {
         return;
       }
 
-      // ذخیره‌ی همه‌ی آیتم‌ها (بدون Splitting Preview)
       for (const item of items) {
         await saveItem(item);
       }
@@ -262,26 +263,31 @@ export const RecordButton = () => {
   return (
     <div className="flex flex-col items-center gap-4">
       <RecordingGuide />
-      <div className="relative">
-        <button
-          type="button"
-          onClick={handleClick}
-          disabled={isProcessing}
-          className={`relative z-10 w-24 h-24 rounded-full text-white text-4xl shadow-xl transition-all duration-300 ${
-            isRecording
-              ? 'bg-gradient-to-r from-red-500 to-pink-500 animate-pulse ring-4 ring-red-300'
-              : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 hover:shadow-2xl'
-          }`}
-        >
-          {isRecording ? '⏹' : '🎙'}
-        </button>
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={handleClick}
+        disabled={isProcessing}
+        className={`relative w-24 h-24 rounded-full flex items-center justify-center text-white shadow-xl transition-colors ${
+          isRecording
+            ? 'bg-gradient-to-r from-red-500 to-pink-500 animate-pulse ring-4 ring-red-300'
+            : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:shadow-2xl'
+        }`}
+      >
+        {isRecording ? (
+          <StopIcon className="w-10 h-10" />
+        ) : (
+          <MicrophoneIcon className="w-10 h-10" />
+        )}
         {isRecording && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -inset-2 rounded-full border-4 border-red-300/50 animate-ping"
+          <motion.div
+            className="absolute -inset-2 rounded-full border-4 border-red-300/50"
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ repeat: Infinity, duration: 1.5 }}
           />
         )}
-      </div>
+      </motion.button>
+
       {isRecording && (
         <div className="text-center w-full max-w-xs">
           <p className="text-sm text-red-500 font-medium">⚫ Recording... (tap to stop)</p>
@@ -289,7 +295,7 @@ export const RecordButton = () => {
             ⏱️ {formatTime(recordingTime)} / max 1:00
           </p>
           <div className="mt-2 w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-            <div 
+            <div
               className={`h-full transition-all duration-100 ${getLevelColor(audioLevel)}`}
               style={{ width: `${audioLevel * 100}%` }}
             />

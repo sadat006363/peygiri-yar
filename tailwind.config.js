@@ -6,7 +6,17 @@ module.exports = {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
+    },
   },
-  plugins: [],
+  plugins: [
+    require('daisyui'),
+    require('tailwindcss-animate'),
+  ],
+  daisyui: {
+    themes: ['light'], // فقط از تم روشن استفاده می‌کنیم
+  },
 };

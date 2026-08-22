@@ -1,13 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  MicrophoneIcon, 
+  CalendarDaysIcon, 
+  ClockIcon, 
+  CheckCircleIcon, 
+  XCircleIcon,
+  ListBulletIcon,
+  ArrowPathIcon
+} from '@heroicons/react/24/outline';
+
 import { RecordButton } from '@/components/recorder/RecordButton';
 import { ApprovalList } from '@/components/review/ApprovalList';
-// import { ReviewQueue } from '@/components/review/ReviewQueue'; // غیرفعال برای MVP
 import { HistoryList } from '@/components/history/HistoryList';
 import { TodayTasks } from '@/components/dashboard/TodayTasks';
-// import { UnscheduledTasks } from '@/components/dashboard/UnscheduledTasks'; // غیرفعال برای MVP
-// import { DashboardSummary } from '@/components/dashboard/DashboardSummary'; // غیرفعال برای MVP
 import { OnboardingModal } from '@/components/ui/OnboardingModal';
 import { useItemStore } from '@/stores/itemStore';
 import { Card } from '@/components/ui/Card';
@@ -21,29 +29,20 @@ export default function Home() {
   useEffect(() => {
     fetchItems();
     const hasSeen = localStorage.getItem('onboardingSeen');
-    if (hasSeen) {
-      setOnboardingComplete(true);
-    }
+    if (hasSeen) setOnboardingComplete(true);
     setIsMounted(true);
   }, []);
 
   const toggleSection = (sectionId: string) => {
-    if (openSection === sectionId) {
-      setOpenSection(null);
-    } else {
-      setOpenSection(sectionId);
-    }
+    setOpenSection(prev => prev === sectionId ? null : sectionId);
   };
 
-  // جلوگیری از رندر سمت سرور برای کامپوننت‌های تعاملی
   if (!isMounted) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <div className="text-center py-8">
-            <h1 className="text-4xl font-extrabold tracking-tight">🎯 Peygiri Yar</h1>
-            <p className="text-gray-500 mt-2 text-lg">Loading...</p>
-          </div>
+      <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-extrabold text-gray-800">🎯 Peygiri Yar</h1>
+          <p className="text-gray-500 mt-2">Loading...</p>
         </div>
       </main>
     );
@@ -51,15 +50,25 @@ export default function Home() {
 
   const hasPending = pendingItems.length > 0;
 
+  const sectionVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
         <OnboardingModal onComplete={() => setOnboardingComplete(true)} />
 
         <header className="text-center py-8">
-          <div className="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text"
+          >
             <h1 className="text-4xl font-extrabold tracking-tight">🎯 Peygiri Yar</h1>
-          </div>
+          </motion.div>
           <p className="text-gray-500 mt-2 text-lg">Smart voice assistant for tracking</p>
           <div className="w-24 h-1 bg-gradient-to-r from-indigo-400 to-purple-400 mx-auto mt-3 rounded-full"></div>
         </header>
@@ -71,116 +80,121 @@ export default function Home() {
         </Card>
 
         {/* SECTION 1: Today's Tasks */}
-        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+        <div className="bg-white rounded-2xl shadow-md border border-gray-200/60 mb-4 overflow-hidden">
           <button
             onClick={() => toggleSection('today')}
-            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+            className="w-full flex justify-between items-center p-4 hover:bg-gray-50 transition-colors"
           >
-            <h2 className="text-lg font-bold text-gray-800">📅 Today's Tasks</h2>
-            <span className="text-gray-500 text-xl">
-              {openSection === 'today' ? '▲' : '▼'}
-            </span>
-          </button>
-          {openSection === 'today' && (
-            <div className="p-4 bg-white">
-              <TodayTasks />
+            <div className="flex items-center gap-2 text-gray-800">
+              <CalendarDaysIcon className="w-6 h-6 text-indigo-600" />
+              <h2 className="text-lg font-bold">Today's Tasks</h2>
             </div>
-          )}
+            <motion.span
+              animate={{ rotate: openSection === 'today' ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-gray-500"
+            >
+              <ChevronUpDownIcon className="w-5 h-5" />
+            </motion.span>
+          </button>
+          <AnimatePresence>
+            {openSection === 'today' && (
+              <motion.div
+                variants={sectionVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                className="p-4 border-t border-gray-100"
+              >
+                <TodayTasks />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* ===== SECTION: Unscheduled (غیرفعال برای MVP) ===== */}
-        {/*
-        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
-          <button
-            onClick={() => toggleSection('unscheduled')}
-            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-          >
-            <h2 className="text-lg font-bold text-gray-800">📌 Unscheduled</h2>
-            <span className="text-gray-500 text-xl">
-              {openSection === 'unscheduled' ? '▲' : '▼'}
-            </span>
-          </button>
-          {openSection === 'unscheduled' && (
-            <div className="p-4 bg-white">
-              <UnscheduledTasks />
-            </div>
-          )}
-        </div>
-        */}
-
-        {/* ===== SECTION: Needs Review (غیرفعال برای MVP) ===== */}
-        {/*
-        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
-          <button
-            onClick={() => toggleSection('review')}
-            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-gray-800">🔍 Needs Review</h2>
-            </div>
-            <span className="text-gray-500 text-xl">
-              {openSection === 'review' ? '▲' : '▼'}
-            </span>
-          </button>
-          {openSection === 'review' && (
-            <div className="p-4 bg-white">
-              <ReviewQueue />
-            </div>
-          )}
-        </div>
-        */}
-
-        {/* SECTION 4: Pending Approval (با چشمک‌زن) */}
-        <div className={`border rounded-lg mb-4 overflow-hidden bg-white shadow-sm transition-all duration-300 ${
-          hasPending ? 'border-yellow-400 ring-2 ring-yellow-300 ring-opacity-50' : 'border-gray-200'
+        {/* SECTION 2: Pending Approval (with blinking alert) */}
+        <div className={`bg-white rounded-2xl shadow-md border mb-4 overflow-hidden transition-colors ${
+          hasPending ? 'border-yellow-400 ring-2 ring-yellow-300/50' : 'border-gray-200/60'
         }`}>
           <button
             onClick={() => toggleSection('pending')}
             className={`w-full flex justify-between items-center p-4 transition-colors ${
-              hasPending ? 'bg-yellow-50 hover:bg-yellow-100' : 'bg-gray-50 hover:bg-gray-100'
+              hasPending ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-gray-50'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-bold text-gray-800">⏳ Pending Approval</h2>
+            <div className="flex items-center gap-2 text-gray-800">
+              <ClockIcon className="w-6 h-6 text-yellow-600" />
+              <h2 className="text-lg font-bold">Pending Approval</h2>
               {hasPending && (
                 <>
-                  <span className="relative flex h-3 w-3">
+                  <motion.span
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    className="relative flex h-3 w-3"
+                  >
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                  </span>
+                  </motion.span>
                   <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full animate-pulse">
                     {pendingItems.length}
                   </span>
                 </>
               )}
             </div>
-            <span className="text-gray-500 text-xl">
-              {openSection === 'pending' ? '▲' : '▼'}
-            </span>
+            <motion.span
+              animate={{ rotate: openSection === 'pending' ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-gray-500"
+            >
+              <ChevronUpDownIcon className="w-5 h-5" />
+            </motion.span>
           </button>
-          {openSection === 'pending' && (
-            <div className="p-4 bg-white animate-fade-in">
-              <ApprovalList />
-            </div>
-          )}
+          <AnimatePresence>
+            {openSection === 'pending' && (
+              <motion.div
+                variants={sectionVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                className="p-4 border-t border-gray-100"
+              >
+                <ApprovalList />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* SECTION 5: History */}
-        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
+        {/* SECTION 3: History */}
+        <div className="bg-white rounded-2xl shadow-md border border-gray-200/60 mb-4 overflow-hidden">
           <button
             onClick={() => toggleSection('history')}
-            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+            className="w-full flex justify-between items-center p-4 hover:bg-gray-50 transition-colors"
           >
-            <h2 className="text-lg font-bold text-gray-800">📜 History</h2>
-            <span className="text-gray-500 text-xl">
-              {openSection === 'history' ? '▲' : '▼'}
-            </span>
-          </button>
-          {openSection === 'history' && (
-            <div className="p-4 bg-white">
-              <HistoryList />
+            <div className="flex items-center gap-2 text-gray-800">
+              <ListBulletIcon className="w-6 h-6 text-purple-600" />
+              <h2 className="text-lg font-bold">History</h2>
             </div>
-          )}
+            <motion.span
+              animate={{ rotate: openSection === 'history' ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-gray-500"
+            >
+              <ChevronUpDownIcon className="w-5 h-5" />
+            </motion.span>
+          </button>
+          <AnimatePresence>
+            {openSection === 'history' && (
+              <motion.div
+                variants={sectionVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                className="p-4 border-t border-gray-100"
+              >
+                <HistoryList />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <footer className="text-center text-xs text-gray-400 mt-12 border-t border-gray-200 pt-6">
@@ -188,5 +202,14 @@ export default function Home() {
         </footer>
       </div>
     </main>
+  );
+}
+
+// یک کامپوننت کوچک برای آیکون چپ‌راست (chevron)
+function ChevronUpDownIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+    </svg>
   );
 }

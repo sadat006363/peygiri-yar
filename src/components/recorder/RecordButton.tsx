@@ -129,10 +129,9 @@ export const RecordButton = () => {
       title: itemData.title || 'Untitled',
       description: itemData.description || '',
       priority: 'medium', // ✅ مقدار پیش‌فرض
-      dueDate: itemData.dueDate || null,
-      nextAction: null,
-      waitingFor: null,
+      dueDate: itemData.dueDate || undefined, // ✅ تبدیل null به undefined
       status: status,
+      // فیلدهای اضافی (nextAction, waitingFor, ...) حذف شدند
     });
   };
 
@@ -236,7 +235,7 @@ export const RecordButton = () => {
         return;
       }
 
-      // ذخیره‌ی همه‌ی آیتم‌ها (بدون Splitting Preview)
+      // ذخیره‌ی همه‌ی آیتم‌ها
       for (const item of items) {
         await saveItem(item);
       }

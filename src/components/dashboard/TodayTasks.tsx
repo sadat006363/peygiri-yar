@@ -31,9 +31,8 @@ export const TodayTasks = () => {
   }, [activeItems]);
 
   const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this task? It will also be removed from History.')) {
+    if (confirm('Are you sure you want to delete this task?')) {
       await deleteItem(id);
-      // آیتم از دیتابیس حذف می‌شود و fetchItems دوباره فراخوانی می‌شود
     }
   };
 
@@ -41,8 +40,8 @@ export const TodayTasks = () => {
 
   if (todayItems.length === 0) {
     return (
-      <Card className="bg-gray-50 border-dashed">
-        <p className="text-gray-400 text-center py-4">📭 No tasks for today.</p>
+      <Card className="bg-green-50 border border-green-200">
+        <p className="text-green-700 text-center py-4">🎉 No tasks for today! Enjoy your day.</p>
       </Card>
     );
   }
@@ -71,9 +70,9 @@ export const TodayTasks = () => {
                 )}
               </div>
             </div>
-            <Button 
-              variant="danger" 
-              size="sm" 
+            <Button
+              variant="danger"
+              size="sm"
               onClick={() => item.id && handleDelete(item.id)}
               className="ml-2"
             >

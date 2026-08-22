@@ -22,7 +22,7 @@ export const UnscheduledTasks = () => {
   }, [activeItems]);
 
   const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this item? It will also be removed from History.')) {
+    if (confirm('Are you sure you want to delete this item?')) {
       await deleteItem(id);
     }
   };
@@ -31,8 +31,8 @@ export const UnscheduledTasks = () => {
 
   if (unscheduledItems.length === 0) {
     return (
-      <Card className="bg-gray-50 border-dashed">
-        <p className="text-gray-400 text-center py-4">📌 No unscheduled items.</p>
+      <Card className="bg-gray-50 border border-gray-200">
+        <p className="text-gray-500 text-center py-4">📌 All your items have a due date. Great organization!</p>
       </Card>
     );
   }
@@ -62,9 +62,9 @@ export const UnscheduledTasks = () => {
                 )}
               </div>
             </div>
-            <Button 
-              variant="danger" 
-              size="sm" 
+            <Button
+              variant="danger"
+              size="sm"
               onClick={() => item.id && handleDelete(item.id)}
               className="ml-2"
             >

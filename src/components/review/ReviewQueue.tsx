@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useItemStore } from '@/stores/itemStore';
 import { ItemCard } from './ItemCard';
 import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
 
 export const ReviewQueue = () => {
   const { needsReviewItems, fetchItems, isLoading, updateItem } = useItemStore();
@@ -13,7 +14,6 @@ export const ReviewQueue = () => {
   }, []);
 
   const handleConfirm = async (itemId: number) => {
-    // تأیید → به Pending Approval منتقل شود
     await updateItem(itemId, { status: 'pending' });
   };
 
@@ -26,7 +26,11 @@ export const ReviewQueue = () => {
   if (isLoading) return <p className="text-gray-400 text-center py-4">Loading...</p>;
 
   if (needsReviewItems.length === 0) {
-    return <p className="text-gray-400 text-center py-4">🔍 No items need review.</p>;
+    return (
+      <Card className="bg-green-50 border border-green-200">
+        <p className="text-green-700 text-center py-4">✅ No items need review. Everything is clear!</p>
+      </Card>
+    );
   }
 
   return (

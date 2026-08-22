@@ -8,16 +8,23 @@ import { HistoryList } from '@/components/history/HistoryList';
 import { TodayTasks } from '@/components/dashboard/TodayTasks';
 import { UnscheduledTasks } from '@/components/dashboard/UnscheduledTasks';
 import { DashboardSummary } from '@/components/dashboard/DashboardSummary';
+import { OnboardingModal } from '@/components/ui/OnboardingModal';
+import { HelpTooltip } from '@/components/ui/HelpTooltip';
 import { useItemStore } from '@/stores/itemStore';
 import { Card } from '@/components/ui/Card';
 
 export default function Home() {
   const { fetchItems } = useItemStore();
-  // ✅ تغییر: همه‌ی بخش‌ها در حالت بسته (جمع‌شده) باشند
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
 
   useEffect(() => {
     fetchItems();
+    // اگر کاربر قبلاً مودال را دیده، نیازی به نمایش مجدد نیست
+    const hasSeen = localStorage.getItem('onboardingSeen');
+    if (hasSeen) {
+      setOnboardingComplete(true);
+    }
   }, []);
 
   const toggleSection = (sectionId: string) => {
@@ -31,6 +38,9 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
+        {/* مودال خوش‌آمدگویی */}
+        <OnboardingModal onComplete={() => setOnboardingComplete(true)} />
+
         <header className="text-center py-8">
           <div className="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">
             <h1 className="text-4xl font-extrabold tracking-tight">🎯 Peygiri Yar</h1>
@@ -45,7 +55,19 @@ export default function Home() {
             onClick={() => toggleSection('summary')}
             className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
           >
-            <h2 className="text-lg font-bold text-gray-800">📊 Dashboard Summary</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-800">📊 Dashboard Summary</h2>
+              <HelpTooltip>
+                <p>📊 <strong>Dashboard Summary</strong></p>
+                <p className="text-xs text-gray-500 mt-1">Shows you key stats at a glance:</p>
+                <ul className="text-xs text-gray-600 mt-1 space-y-0.5 list-disc list-inside">
+                  <li>🔴 Overdue items</li>
+                  <li>🔄 Items needing follow-up</li>
+                  <li>⏳ Waiting for reply</li>
+                  <li>💡 Ideas & 💰 Expenses</li>
+                </ul>
+              </HelpTooltip>
+            </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'summary' ? '▲' : '▼'}
             </span>
@@ -69,7 +91,14 @@ export default function Home() {
             onClick={() => toggleSection('today')}
             className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
           >
-            <h2 className="text-lg font-bold text-gray-800">📅 Today's Tasks</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-800">📅 Today's Tasks</h2>
+              <HelpTooltip>
+                <p>📅 <strong>Today's Tasks</strong></p>
+                <p className="text-xs text-gray-500 mt-1">Items due today that need your attention.</p>
+                <p className="text-xs text-gray-500 mt-1">✅ Complete or 🗑 Delete tasks you're done with.</p>
+              </HelpTooltip>
+            </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'today' ? '▲' : '▼'}
             </span>
@@ -87,7 +116,14 @@ export default function Home() {
             onClick={() => toggleSection('unscheduled')}
             className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
           >
-            <h2 className="text-lg font-bold text-gray-800">📌 Unscheduled</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-800">📌 Unscheduled</h2>
+              <HelpTooltip>
+                <p>📌 <strong>Unscheduled</strong></p>
+                <p className="text-xs text-gray-500 mt-1">Items without a due date.</p>
+                <p className="text-xs text-gray-500 mt-1">You can review and delete them anytime.</p>
+              </HelpTooltip>
+            </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'unscheduled' ? '▲' : '▼'}
             </span>
@@ -105,7 +141,14 @@ export default function Home() {
             onClick={() => toggleSection('review')}
             className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
           >
-            <h2 className="text-lg font-bold text-gray-800">🔍 Needs Review</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-800">🔍 Needs Review</h2>
+              <HelpTooltip>
+                <p>🔍 <strong>Needs Review</strong></p>
+                <p className="text-xs text-gray-500 mt-1">Items with low confidence (below 85%).</p>
+                <p className="text-xs text-gray-500 mt-1">✔ Confirm if correct, or ✖ Discard if not.</p>
+              </HelpTooltip>
+            </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'review' ? '▲' : '▼'}
             </span>
@@ -123,7 +166,14 @@ export default function Home() {
             onClick={() => toggleSection('pending')}
             className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
           >
-            <h2 className="text-lg font-bold text-gray-800">⏳ Pending Approval</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-800">⏳ Pending Approval</h2>
+              <HelpTooltip>
+                <p>⏳ <strong>Pending Approval</strong></p>
+                <p className="text-xs text-gray-500 mt-1">New items ready for your review.</p>
+                <p className="text-xs text-gray-500 mt-1">✔ Approve, ✖ Reject, or ✎ Edit before confirming.</p>
+              </HelpTooltip>
+            </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'pending' ? '▲' : '▼'}
             </span>
@@ -141,7 +191,14 @@ export default function Home() {
             onClick={() => toggleSection('history')}
             className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
           >
-            <h2 className="text-lg font-bold text-gray-800">📜 History</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-800">📜 History</h2>
+              <HelpTooltip>
+                <p>📜 <strong>History</strong></p>
+                <p className="text-xs text-gray-500 mt-1">All your active, completed, and rejected items.</p>
+                <p className="text-xs text-gray-500 mt-1">🗑 Delete items you no longer need.</p>
+              </HelpTooltip>
+            </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'history' ? '▲' : '▼'}
             </span>

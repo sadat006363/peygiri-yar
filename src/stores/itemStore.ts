@@ -53,9 +53,9 @@ export const useItemStore = create<ItemState>((set, get) => ({
     console.log('📤 addItem فراخوانی شد:', item);
     try {
       const now = new Date();
-      // اگر status در ورودی وجود داشت، از آن استفاده کن، در غیر این صورت پیش‌فرض 'pending'
       const finalStatus = item.status || 'pending';
-      
+
+      // ✅ تبدیل null به undefined برای فیلدهای اختیاری
       const newItem: Omit<Item, 'id'> = {
         ...item,
         status: finalStatus,
@@ -65,17 +65,22 @@ export const useItemStore = create<ItemState>((set, get) => ({
         correctedTranscript: item.correctedTranscript || item.rawText,
         correctionStatus: item.correctionStatus || 'none',
         confidence: item.confidence ?? 1.0,
-        followUpCondition: item.followUpCondition ?? null,
-        followUpDate: item.followUpDate ?? null,
-        project: item.project ?? null,
+        followUpCondition: item.followUpCondition ?? undefined,
+        followUpDate: item.followUpDate ?? undefined,
+        project: item.project ?? undefined,
         tags: item.tags || [],
         followUpStatus: item.followUpStatus || undefined,
-        nextAction: item.nextAction || undefined,
-        waitingFor: item.waitingFor || undefined,
-        owner: item.owner || undefined,
-        amount: item.amount || undefined,
-        currency: item.currency || undefined,
+        // فیلدهای اختیاری با تبدیل null → undefined
+        nextAction: item.nextAction ?? undefined,
+        waitingFor: item.waitingFor ?? undefined,
+        owner: item.owner ?? undefined,
+        amount: item.amount ?? undefined,
+        currency: item.currency ?? undefined,
+        person: item.person ?? undefined,
+        company: item.company ?? undefined,
+        // 'project' قبلاً مقداردهی شده، دوباره نمی‌نویسیم
       };
+
       const savedId = await itemRepository.add(newItem);
       console.log(`✅ آیتم با ID ${savedId} اضافه شد.`);
       await get().fetchItems();

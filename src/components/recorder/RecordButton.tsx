@@ -5,7 +5,7 @@ import { useRecorder } from '@/hooks/useRecorder';
 import { useAudioLevel } from '@/hooks/useAudioLevel';
 import { useItemStore } from '@/stores/itemStore';
 import { RecordingGuide } from './RecordingGuide';
-import { SplitPreview } from './SplitPreview';
+// import { SplitPreview } from './SplitPreview'; // غیرفعال برای MVP
 
 export const RecordButton = () => {
   const { isRecording, audioBlob, stream, startRecording, stopRecording, resetAudio, isRecordingRef } = useRecorder();
@@ -17,9 +17,9 @@ export const RecordButton = () => {
   const timeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isProcessingRef = useRef(false);
 
-  // State برای نمایش پیش‌نمایش Splitting
-  const [splitItems, setSplitItems] = useState<any[] | null>(null);
-  const [showSplitPreview, setShowSplitPreview] = useState(false);
+  // State برای نمایش پیش‌نمایش Splitting (غیرفعال برای MVP)
+  // const [splitItems, setSplitItems] = useState<any[] | null>(null);
+  // const [showSplitPreview, setShowSplitPreview] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -138,10 +138,11 @@ export const RecordButton = () => {
       dueDate: itemData.dueDate || null,
       nextAction: itemData.nextAction || null,
       waitingFor: itemData.waitingFor || null,
-      person: itemData.person || null,
-      company: itemData.company || null,
-      project: itemData.project || null,
-      owner: itemData.owner || null,
+      // موجودیت‌ها (غیرفعال برای MVP)
+      // person: itemData.person || null,
+      // company: itemData.company || null,
+      // project: itemData.project || null,
+      // owner: itemData.owner || null,
       status: status,
     });
   };
@@ -246,7 +247,18 @@ export const RecordButton = () => {
         return;
       }
 
-      // اگر بیش از یک آیتم تشخیص داده شود، پیش‌نمایش Splitting را نشان بده
+      // ==========================================================
+      // Splitting هوشمند (غیرفعال برای MVP)
+      // به‌جای نمایش پیش‌نمایش، همه آیتم‌ها را مستقیماً ذخیره کن
+      // ==========================================================
+      for (const item of items) {
+        await saveItem(item);
+      }
+      console.log(`✅ ${items.length} آیتم با موفقیت ذخیره شدند.`);
+      resetAudio();
+
+      // بخش قبلی که SplitPreview را نشان می‌داد (کامنت شده)
+      /*
       if (items.length > 1) {
         console.log('✂️ چندین آیتم تشخیص داده شد، نمایش پیش‌نمایش...');
         setSplitItems(items);
@@ -256,11 +268,8 @@ export const RecordButton = () => {
         resetAudio();
         return;
       }
-
-      // اگر فقط یک آیتم باشد، مستقیماً ذخیره کن
       await saveItem(items[0]);
-      console.log(`✅ آیتم با موفقیت ذخیره شد.`);
-      resetAudio();
+      */
 
     } catch (error: any) {
       console.error('❌ خطای کلی در handleSend:', error.message);
@@ -273,6 +282,8 @@ export const RecordButton = () => {
     }
   };
 
+  // توابع مربوط به SplitPreview (غیرفعال برای MVP)
+  /*
   const handleSplitConfirm = async (confirmedItems: any[]) => {
     setShowSplitPreview(false);
     setIsProcessing(true);
@@ -298,6 +309,7 @@ export const RecordButton = () => {
     resetAudio();
     isProcessingRef.current = false;
   };
+  */
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -343,6 +355,8 @@ export const RecordButton = () => {
         </div>
       )}
 
+      {/* کامپوننت SplitPreview (غیرفعال) */}
+      {/*
       {splitItems && (
         <SplitPreview
           isOpen={showSplitPreview}
@@ -355,6 +369,7 @@ export const RecordButton = () => {
           onDiscard={handleSplitDiscard}
         />
       )}
+      */}
     </div>
   );
 };

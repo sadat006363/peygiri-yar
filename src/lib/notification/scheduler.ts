@@ -1,8 +1,16 @@
 import { Item } from '@/lib/types';
 
+// ✅ برای MVP غیرفعال است
+const FEATURE_ENABLED = false;
+
 const timers: Map<number, NodeJS.Timeout> = new Map();
 
 export const scheduleNotification = (item: Item) => {
+  if (!FEATURE_ENABLED) {
+    console.log('🔔 یادآوری هوشمند غیرفعال است (MVP).');
+    return;
+  }
+
   if (!item.id) return;
   if (typeof window === 'undefined') return;
 
@@ -14,7 +22,7 @@ export const scheduleNotification = (item: Item) => {
 
   const now = new Date();
 
-  // ✅ یادآوری بر اساس نوع آیتم
+  // یادآوری بر اساس نوع آیتم
   const reminderTime = getReminderTime(item);
   if (!reminderTime) return;
 
@@ -35,7 +43,6 @@ function getReminderTime(item: Item): Date | null {
 
   switch (item.category) {
     case 'task':
-      // تسک: یک روز قبل از موعد
       if (dueDate) {
         const reminder = new Date(dueDate);
         reminder.setDate(dueDate.getDate() - 1);
@@ -45,21 +52,18 @@ function getReminderTime(item: Item): Date | null {
       return null;
 
     case 'customer':
-      // مشتری: یک روز قبل + صبح روز موعد
       if (dueDate) {
-        const reminder1 = new Date(dueDate);
-        reminder1.setDate(dueDate.getDate() - 1);
-        reminder1.setHours(9, 0, 0, 0);
-        return reminder1;
+        const reminder = new Date(dueDate);
+        reminder.setDate(dueDate.getDate() - 1);
+        reminder.setHours(9, 0, 0, 0);
+        return reminder;
       }
       return null;
 
     case 'cost':
-      // هزینه: بدون یادآوری فوری (فقط در خلاصه)
       return null;
 
     case 'idea':
-      // ایده: بدون یادآوری
       return null;
 
     default:
@@ -79,7 +83,7 @@ function sendNotification(item: Item) {
     if (item.waitingFor) {
       body += `\n⏳ Waiting: ${item.waitingFor}`;
     }
-    new Notification('⏰ پیگیری‌یار: یادآوری', {
+    new Notification('⏰ Peygiri Yar: Reminder', {
       body: body,
       icon: '/icon-192.png',
     });

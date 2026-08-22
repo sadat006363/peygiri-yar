@@ -70,11 +70,12 @@ export const ItemCard = ({ item }: { item: Item }) => {
   const [editDueDate, setEditDueDate] = useState<string>(item.dueDate ?? '');
   const [editNextAction, setEditNextAction] = useState<string>(item.nextAction ?? '');
   const [editWaitingFor, setEditWaitingFor] = useState<string>(item.waitingFor ?? '');
-  // ✅ موجودیت‌ها
-  const [editPerson, setEditPerson] = useState<string>(item.person ?? '');
-  const [editCompany, setEditCompany] = useState<string>(item.company ?? '');
-  const [editProject, setEditProject] = useState<string>(item.project ?? '');
-  const [editOwner, setEditOwner] = useState<string>(item.owner ?? '');
+
+  // موجودیت‌ها (غیرفعال برای MVP)
+  // const [editPerson, setEditPerson] = useState<string>(item.person ?? '');
+  // const [editCompany, setEditCompany] = useState<string>(item.company ?? '');
+  // const [editProject, setEditProject] = useState<string>(item.project ?? '');
+  // const [editOwner, setEditOwner] = useState<string>(item.owner ?? '');
 
   const handleUpdateFollowUpStatus = async (status: FollowUpStatus) => {
     if (item.id) {
@@ -121,25 +122,12 @@ export const ItemCard = ({ item }: { item: Item }) => {
     }
   };
 
+  // حافظه‌ی اصلاحات (غیرفعال برای MVP)
   const saveToCorrectionMemory = async (original: string, corrected: string) => {
-    if (original.trim() === corrected.trim()) return;
-    try {
-      const res = await fetch('/api/correction-memory/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          original: original.trim(),
-          corrected: corrected.trim(),
-        }),
-      });
-      if (res.ok) {
-        console.log('✅ اصلاحات در حافظه ذخیره شد.');
-      } else {
-        console.warn('⚠️ خطا در ذخیره اصلاحات در حافظه.');
-      }
-    } catch (error) {
-      console.warn('⚠️ خطا در ذخیره اصلاحات:', error);
-    }
+    // const FEATURE_ENABLED = false;
+    // if (!FEATURE_ENABLED) return;
+    // ... (کد اصلی)
+    return;
   };
 
   const handleSaveEdit = async () => {
@@ -157,10 +145,11 @@ export const ItemCard = ({ item }: { item: Item }) => {
         dueDate: editDueDate || undefined,
         nextAction: editNextAction || undefined,
         waitingFor: editWaitingFor || undefined,
-        person: editPerson || undefined,
-        company: editCompany || undefined,
-        project: editProject || undefined,
-        owner: editOwner || undefined,
+        // موجودیت‌ها (غیرفعال)
+        // person: editPerson || undefined,
+        // company: editCompany || undefined,
+        // project: editProject || undefined,
+        // owner: editOwner || undefined,
       });
       setIsEditing(false);
       alert('✅ Item updated and corrections saved to memory.');
@@ -198,19 +187,13 @@ export const ItemCard = ({ item }: { item: Item }) => {
             <div className="text-xs text-orange-600 font-medium">⏳ Waiting for: {item.waitingFor}</div>
           )}
 
-          {/* ✅ موجودیت‌ها */}
-          {item.person && (
-            <div className="text-xs text-blue-600 font-medium">👤 Person: {item.person}</div>
-          )}
-          {item.company && (
-            <div className="text-xs text-purple-600 font-medium">🏢 Company: {item.company}</div>
-          )}
-          {item.project && (
-            <div className="text-xs text-indigo-600 font-medium">📁 Project: {item.project}</div>
-          )}
-          {item.owner && (
-            <div className="text-xs text-gray-600 font-medium">👤 Owner: {item.owner}</div>
-          )}
+          {/* موجودیت‌ها (غیرفعال برای MVP) */}
+          {/*
+          {item.person && <div className="text-xs text-blue-600 font-medium">👤 Person: {item.person}</div>}
+          {item.company && <div className="text-xs text-purple-600 font-medium">🏢 Company: {item.company}</div>}
+          {item.project && <div className="text-xs text-indigo-600 font-medium">📁 Project: {item.project}</div>}
+          {item.owner && <div className="text-xs text-gray-600 font-medium">👤 Owner: {item.owner}</div>}
+          */}
 
           {item.rawTranscript && item.correctedTranscript && item.rawTranscript !== item.correctedTranscript && (
             <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -386,34 +369,37 @@ export const ItemCard = ({ item }: { item: Item }) => {
           className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
           placeholder="Waiting for"
         />
+        {/* موجودیت‌ها (غیرفعال برای MVP) */}
+        {/*
         <input
           type="text"
-          value={editPerson}
+          value={editPerson || ''}
           onChange={(e) => setEditPerson(e.target.value)}
-          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 ..."
           placeholder="Person (e.g., 'John')"
         />
         <input
           type="text"
-          value={editCompany}
+          value={editCompany || ''}
           onChange={(e) => setEditCompany(e.target.value)}
-          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 ..."
           placeholder="Company (e.g., 'Acme Corp')"
         />
         <input
           type="text"
-          value={editProject}
+          value={editProject || ''}
           onChange={(e) => setEditProject(e.target.value)}
-          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 ..."
           placeholder="Project (e.g., 'Project X')"
         />
         <input
           type="text"
-          value={editOwner}
+          value={editOwner || ''}
           onChange={(e) => setEditOwner(e.target.value)}
-          className="w-full border border-gray-300 rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          className="w-full border border-gray-300 rounded-xl p-3 mb-4 ..."
           placeholder="Owner (e.g., 'Me', 'Team')"
         />
+        */}
         <div className="flex gap-3">
           <Button variant="primary" onClick={handleSaveEdit}>💾 Save</Button>
           <Button variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>

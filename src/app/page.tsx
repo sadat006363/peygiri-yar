@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { RecordButton } from '@/components/recorder/RecordButton';
 import { ApprovalList } from '@/components/review/ApprovalList';
-import { ReviewQueue } from '@/components/review/ReviewQueue';
+// import { ReviewQueue } from '@/components/review/ReviewQueue'; // غیرفعال برای MVP
 import { HistoryList } from '@/components/history/HistoryList';
 import { TodayTasks } from '@/components/dashboard/TodayTasks';
 import { UnscheduledTasks } from '@/components/dashboard/UnscheduledTasks';
-import { DashboardSummary } from '@/components/dashboard/DashboardSummary';
+// import { DashboardSummary } from '@/components/dashboard/DashboardSummary'; // غیرفعال برای MVP
 import { OnboardingModal } from '@/components/ui/OnboardingModal';
 import { HelpTooltip } from '@/components/ui/HelpTooltip';
 import { useItemStore } from '@/stores/itemStore';
@@ -20,7 +20,6 @@ export default function Home() {
 
   useEffect(() => {
     fetchItems();
-    // اگر کاربر قبلاً مودال را دیده، نیازی به نمایش مجدد نیست
     const hasSeen = localStorage.getItem('onboardingSeen');
     if (hasSeen) {
       setOnboardingComplete(true);
@@ -38,7 +37,6 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* مودال خوش‌آمدگویی */}
         <OnboardingModal onComplete={() => setOnboardingComplete(true)} />
 
         <header className="text-center py-8">
@@ -49,7 +47,8 @@ export default function Home() {
           <div className="w-24 h-1 bg-gradient-to-r from-indigo-400 to-purple-400 mx-auto mt-3 rounded-full"></div>
         </header>
 
-        {/* ===== SECTION: Dashboard Summary ===== */}
+        {/* ===== SECTION: Dashboard Summary (غیرفعال برای MVP) ===== */}
+        {/*
         <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
           <button
             onClick={() => toggleSection('summary')}
@@ -57,16 +56,7 @@ export default function Home() {
           >
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-gray-800">📊 Dashboard Summary</h2>
-              <HelpTooltip>
-                <p>📊 <strong>Dashboard Summary</strong></p>
-                <p className="text-xs text-gray-500 mt-1">Shows you key stats at a glance:</p>
-                <ul className="text-xs text-gray-600 mt-1 space-y-0.5 list-disc list-inside">
-                  <li>🔴 Overdue items</li>
-                  <li>🔄 Items needing follow-up</li>
-                  <li>⏳ Waiting for reply</li>
-                  <li>💡 Ideas & 💰 Expenses</li>
-                </ul>
-              </HelpTooltip>
+              <HelpTooltip>...</HelpTooltip>
             </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'summary' ? '▲' : '▼'}
@@ -78,6 +68,7 @@ export default function Home() {
             </div>
           )}
         </div>
+        */}
 
         <Card className="mb-8 bg-white/80 backdrop-blur-sm border border-white/50 shadow-xl">
           <div className="py-4">
@@ -93,11 +84,7 @@ export default function Home() {
           >
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-gray-800">📅 Today's Tasks</h2>
-              <HelpTooltip>
-                <p>📅 <strong>Today's Tasks</strong></p>
-                <p className="text-xs text-gray-500 mt-1">Items due today that need your attention.</p>
-                <p className="text-xs text-gray-500 mt-1">✅ Complete or 🗑 Delete tasks you're done with.</p>
-              </HelpTooltip>
+              <HelpTooltip>...</HelpTooltip>
             </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'today' ? '▲' : '▼'}
@@ -118,11 +105,7 @@ export default function Home() {
           >
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-gray-800">📌 Unscheduled</h2>
-              <HelpTooltip>
-                <p>📌 <strong>Unscheduled</strong></p>
-                <p className="text-xs text-gray-500 mt-1">Items without a due date.</p>
-                <p className="text-xs text-gray-500 mt-1">You can review and delete them anytime.</p>
-              </HelpTooltip>
+              <HelpTooltip>...</HelpTooltip>
             </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'unscheduled' ? '▲' : '▼'}
@@ -135,7 +118,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* SECTION 3: Needs Review */}
+        {/* ===== SECTION: Needs Review (غیرفعال برای MVP) ===== */}
+        {/*
         <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
           <button
             onClick={() => toggleSection('review')}
@@ -143,11 +127,7 @@ export default function Home() {
           >
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-gray-800">🔍 Needs Review</h2>
-              <HelpTooltip>
-                <p>🔍 <strong>Needs Review</strong></p>
-                <p className="text-xs text-gray-500 mt-1">Items with low confidence (below 85%).</p>
-                <p className="text-xs text-gray-500 mt-1">✔ Confirm if correct, or ✖ Discard if not.</p>
-              </HelpTooltip>
+              <HelpTooltip>...</HelpTooltip>
             </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'review' ? '▲' : '▼'}
@@ -159,6 +139,7 @@ export default function Home() {
             </div>
           )}
         </div>
+        */}
 
         {/* SECTION 4: Pending Approval */}
         <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
@@ -168,11 +149,7 @@ export default function Home() {
           >
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-gray-800">⏳ Pending Approval</h2>
-              <HelpTooltip>
-                <p>⏳ <strong>Pending Approval</strong></p>
-                <p className="text-xs text-gray-500 mt-1">New items ready for your review.</p>
-                <p className="text-xs text-gray-500 mt-1">✔ Approve, ✖ Reject, or ✎ Edit before confirming.</p>
-              </HelpTooltip>
+              <HelpTooltip>...</HelpTooltip>
             </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'pending' ? '▲' : '▼'}
@@ -193,11 +170,7 @@ export default function Home() {
           >
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-gray-800">📜 History</h2>
-              <HelpTooltip>
-                <p>📜 <strong>History</strong></p>
-                <p className="text-xs text-gray-500 mt-1">All your active, completed, and rejected items.</p>
-                <p className="text-xs text-gray-500 mt-1">🗑 Delete items you no longer need.</p>
-              </HelpTooltip>
+              <HelpTooltip>...</HelpTooltip>
             </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'history' ? '▲' : '▼'}

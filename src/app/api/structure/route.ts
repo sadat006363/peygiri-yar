@@ -10,10 +10,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'متن ورودی خالی است' }, { status: 400 });
     }
 
+    // ✅ دریافت تاریخ فعلی به‌صورت YYYY-MM-DD
+    const today = new Date();
+    const currentDate = today.toISOString().split('T')[0];
+    console.log('📅 تاریخ فعلی ارسال‌شده به GPT:', currentDate);
+
+    // ✅ جایگزینی {{currentDate}} در پرامپت
+    const systemPrompt = STRUCTURE_SYSTEM_PROMPT.replace(
+      /{{currentDate}}/g,
+      currentDate
+    );
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: STRUCTURE_SYSTEM_PROMPT },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: STRUCTURE_USER_PROMPT(text) },
       ],
       temperature: 0.2,
@@ -23,7 +34,9 @@ export async function POST(req: NextRequest) {
     const content = response.choices[0]?.message?.content || '{}';
     const parsed = JSON.parse(content);
 
-    // برای سازگاری با نسخه‌ی ساده، فقط فیلدهای مورد نیاز را برمی‌گردانیم
+    console.log('📤 خروجی GPT:', parsed);
+
+    // ✅ بازگرداندن فیلدهای مورد نیاز
     return NextResponse.json({
       title: parsed.title || 'Untitled',
       description: parsed.description || text,

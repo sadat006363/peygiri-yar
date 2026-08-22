@@ -15,18 +15,28 @@ export const TodayTasks = () => {
   }, []);
 
   useEffect(() => {
-    if (activeItems.length === 0) return;
+    if (activeItems.length === 0) {
+      setTodayItems([]);
+      return;
+    }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // ✅ دریافت تاریخ امروز به‌صورت رشته (YYYY-MM-DD)
+    const todayStr = new Date().toISOString().split('T')[0];
+    console.log('📅 تاریخ امروز (رشته):', todayStr);
 
+    // ✅ فیلتر کردن آیتم‌هایی که dueDate برابر با todayStr است
     const todayList = activeItems.filter(i => {
-      if (!i.dueDate) return false;
-      const due = new Date(i.dueDate);
-      due.setHours(0, 0, 0, 0);
-      return due.getTime() === today.getTime();
+      if (!i.dueDate) {
+        console.log('⚠️ آیتم بدون dueDate:', i.title);
+        return false;
+      }
+      // مقایسه‌ی رشته‌ها (YYYY-MM-DD)
+      const isToday = i.dueDate === todayStr;
+      console.log(`📅 ${i.title}: dueDate=${i.dueDate}, isToday=${isToday}`);
+      return isToday;
     });
 
+    console.log(`📊 تعداد آیتم‌های امروز: ${todayList.length}`);
     setTodayItems(todayList);
   }, [activeItems]);
 
@@ -56,18 +66,7 @@ export const TodayTasks = () => {
               <h4 className="font-bold text-gray-800">{item.title}</h4>
               <p className="text-sm text-gray-600">{item.description}</p>
               <div className="flex items-center gap-2 mt-1">
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  item.priority === 'high' ? 'bg-red-100 text-red-700' :
-                  item.priority === 'medium' ? 'bg-orange-100 text-orange-700' :
-                  'bg-blue-100 text-blue-700'
-                }`}>
-                  {item.priority}
-                </span>
-                {item.followUpStatus && (
-                  <span className="text-xs text-gray-500">
-                    🔄 {item.followUpStatus.replace('_', ' ')}
-                  </span>
-                )}
+                <span className="text-xs text-gray-400">📅 {item.dueDate}</span>
               </div>
             </div>
             <Button

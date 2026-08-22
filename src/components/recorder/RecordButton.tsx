@@ -124,14 +124,13 @@ export const RecordButton = () => {
       rawTranscript: itemData.description || '',
       correctedTranscript: itemData.description || '',
       correctionStatus: 'none',
-      confidence: itemData.confidence || 0.9,
-      category: 'idea', // ✅ همه با دسته‌ی 'idea' ذخیره می‌شوند
+      confidence: 0.9,
+      category: 'idea', // همه با دسته‌ی 'idea' ذخیره می‌شوند
       title: itemData.title || 'Untitled',
       description: itemData.description || '',
-      priority: 'medium', // ✅ مقدار پیش‌فرض
-      dueDate: itemData.dueDate || undefined, // ✅ تبدیل null به undefined
+      priority: 'medium', // مقدار پیش‌فرض
+      dueDate: itemData.dueDate || undefined,
       status: status,
-      // فیلدهای اضافی (nextAction, waitingFor, ...) حذف شدند
     });
   };
 
@@ -224,22 +223,16 @@ export const RecordButton = () => {
       }
 
       const structureData = await structureRes.json();
-      const items = structureData.items || [];
-      console.log('✅ تعداد آیتم‌های تشخیص‌داده‌شده:', items.length);
+      console.log('✅ داده ساختاردهی‌شده:', structureData);
 
-      if (items.length === 0) {
-        alert('❌ No clear items detected. Please try again.');
-        resetAudio();
-        setIsProcessing(false);
-        isProcessingRef.current = false;
-        return;
-      }
+      // ✅ ذخیره‌ی آیتم (با ساختار ساده‌شده)
+      await saveItem({
+        title: structureData.title || 'Untitled',
+        description: structureData.description || rawText,
+        dueDate: structureData.dueDate || undefined,
+      });
 
-      // ذخیره‌ی همه‌ی آیتم‌ها
-      for (const item of items) {
-        await saveItem(item);
-      }
-      console.log(`✅ ${items.length} آیتم با موفقیت ذخیره شدند.`);
+      console.log('✅ آیتم با موفقیت ذخیره شد.');
       resetAudio();
 
     } catch (error: any) {

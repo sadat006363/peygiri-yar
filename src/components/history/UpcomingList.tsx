@@ -1,32 +1,46 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import { useItemStore } from '@/stores/itemStore';
 import { ItemCard } from '../review/ItemCard';
 import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
 
 export const UpcomingList = () => {
-  const { items, fetchItems, isLoading } = useItemStore();
+  const { items, fetchItems, isLoading, clearNonPendingItems } = useItemStore();
 
   useEffect(() => {
     fetchItems();
   }, []);
 
-  // ✅ فیلتر کردن آیتم‌های غیر pending و مرتب‌سازی بر اساس تاریخ سررسید (نزدیک‌ترین به دورترین)
   const upcomingItems = useMemo(() => {
     const filtered = items.filter(i => i.status !== 'pending');
     return filtered.sort((a, b) => {
-      // اگر هر دو تاریخ داشته باشند، بر اساس تاریخ مرتب کن
       if (a.dueDate && b.dueDate) {
         return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
       }
-      // اگر یکی تاریخ داشت، آن را جلوتر بیاور
       if (a.dueDate) return -1;
       if (b.dueDate) return 1;
-      // اگر هیچکدام تاریخ نداشتند، بر اساس تاریخ ایجاد مرتب کن
       return b.createdAt.getTime() - a.createdAt.getTime();
     });
   }, [items]);
+
+  const handleClearAll = async () => {
+    if (upcomingItems.length === 0) {
+      alert('📭 No items to clear.');
+      return;
+    }
+
+    const confirmed = confirm(
+      `⚠️ Are you sure you want to delete all ${upcomingItems.length} items from Upcoming?\n\nThis action cannot be undone.`
+    );
+
+    if (confirmed) {
+      await clearNonPendingItems();
+    }
+  };
 
   if (isLoading) return <p className="text-gray-400 text-center py-4">Loading...</p>;
 
@@ -40,7 +54,18 @@ export const UpcomingList = () => {
 
   return (
     <div className="space-y-4 mt-8">
-      <h3 className="font-bold text-gray-700">📅 Upcoming ({upcomingItems.length})</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="font-bold text-gray-700">📅 Upcoming ({upcomingItems.length})</h3>
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={handleClearAll}
+          className="flex items-center gap-1"
+        >
+          <TrashIcon className="w-4 h-4" />
+          Clear All
+        </Button>
+      </div>
       {upcomingItems.map((item) => (
         <ItemCard key={item.id} item={item} />
       ))}

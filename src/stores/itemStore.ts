@@ -2,8 +2,11 @@ import { create } from 'zustand';
 import { Item, ItemStatus } from '@/lib/types';
 import { itemRepository } from '@/lib/storage/repository';
 
-// تعریف interface برای state و action‌ها
+// ============================================
+// تعریف Interface برای State و Action‌ها
+// ============================================
 interface ItemState {
+  // State
   items: Item[];
   isLoading: boolean;
   pendingItems: Item[];
@@ -11,16 +14,21 @@ interface ItemState {
   completedItems: Item[];
   rejectedItems: Item[];
   needsReviewItems: Item[];
+
+  // Actions
   fetchItems: () => Promise<void>;
   addItem: (item: Omit<Item, 'id' | 'createdAt' | 'updatedAt'> & { status?: ItemStatus }) => Promise<number>;
   updateItem: (id: number, updates: Partial<Item>) => Promise<void>;
   deleteItem: (id: number) => Promise<void>;
+  clearNonPendingItems: () => Promise<void>; // ✅ جدید: حذف همه‌ی آیتم‌های غیر pending
 }
 
-// ساخت store با Zustand
+// ============================================
+// ساخت Store با Zustand
+// ============================================
 export const useItemStore = create<ItemState>((set, get) => ({
   // ============================================
-  // مقادیر اولیه state
+  // مقادیر اولیه State
   // ============================================
   items: [],
   isLoading: false,
@@ -38,7 +46,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ isLoading: true });
     try {
       const allItems = await itemRepository.getAll();
-      
+
       // مرتب‌سازی بر اساس زمان ایجاد (جدیدترین اول)
       const sorted = allItems.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -65,33 +73,33 @@ export const useItemStore = create<ItemState>((set, get) => ({
   // ============================================
   addItem: async (item: Omit<Item, 'id' | 'createdAt' | 'updatedAt'> & { status?: ItemStatus }) => {
     console.log('📤 addItem فراخوانی شد، status دریافتی:', item.status);
-    
+
     // اگر status ارسال نشده باشد، پیش‌فرض 'pending' استفاده می‌شود
     const finalStatus = item.status || 'pending';
     console.log('📤 وضعیت نهایی:', finalStatus);
-    
+
     const now = new Date();
-    
+
     // ساخت شیء جدید با تمام فیلدهای مورد نیاز
     const newItem: Omit<Item, 'id'> = {
       ...item,
       status: finalStatus,
       createdAt: now,
       updatedAt: now,
-      
+
       // فیلدهای اضافی با مقدار پیش‌فرض
       rawTranscript: item.rawTranscript || item.rawText,
       correctedTranscript: item.correctedTranscript || item.rawText,
       correctionStatus: item.correctionStatus || 'none',
       confidence: item.confidence ?? 1.0,
-      
+
       // فیلدهای اختیاری (تبدیل null به undefined)
       followUpCondition: item.followUpCondition ?? undefined,
       followUpDate: item.followUpDate ?? undefined,
       project: item.project ?? undefined,
       tags: item.tags || [],
       followUpStatus: item.followUpStatus || undefined,
-      
+
       // فیلدهای عملیاتی (Next Action, Waiting For, ...)
       nextAction: item.nextAction ?? undefined,
       waitingFor: item.waitingFor ?? undefined,
@@ -99,11 +107,11 @@ export const useItemStore = create<ItemState>((set, get) => ({
       amount: item.amount ?? undefined,
       currency: item.currency ?? undefined,
     };
-    
+
     // ذخیره در دیتابیس
     const savedId = await itemRepository.add(newItem);
     console.log(`✅ آیتم با ID ${savedId} و وضعیت ${finalStatus} اضافه شد.`);
-    
+
     // به‌روزرسانی لیست آیتم‌ها پس از افزودن
     await get().fetchItems();
     return savedId;
@@ -130,5 +138,42 @@ export const useItemStore = create<ItemState>((set, get) => ({
     console.log(`📤 deleteItem فراخوانی شد: id=${id}`);
     await itemRepository.delete(id);
     await get().fetchItems();
+  },
+
+  // ============================================
+  // clearNonPendingItems: حذف همه‌ی آیتم‌های غیر pending (active, completed, rejected, needs_review)
+  // ============================================
+  clearNonPendingItems: async () => {
+    console.log('🗑️ clearNonPendingItems فراخوانی شد.');
+    try {
+      // دریافت همه‌ی آیتم‌ها
+      const allItems = await itemRepository.getAll();
+
+      // فیلتر کردن آیتم‌های غیر pending
+      const nonPendingItems = allItems.filter(i => i.status !== 'pending');
+
+      // اگر آیتمی وجود نداشت، پیام بده و برگرد
+      if (nonPendingItems.length === 0) {
+        console.log('ℹ️ هیچ آیتم غیر pendingی برای حذف وجود ندارد.');
+        return;
+      }
+
+      console.log(`🗑️ در حال حذف ${nonPendingItems.length} آیتم غیر pending...`);
+
+      // حذف هر آیتم به‌صورت جداگانه
+      for (const item of nonPendingItems) {
+        if (item.id) {
+          await itemRepository.delete(item.id);
+          console.log(`✅ آیتم با ID ${item.id} حذف شد.`);
+        }
+      }
+
+      console.log('✅ همه‌ی آیتم‌های غیر pending حذف شدند.');
+
+      // به‌روزرسانی لیست آیتم‌ها پس از حذف
+      await get().fetchItems();
+    } catch (error) {
+      console.error('❌ خطا در clearNonPendingItems:', error);
+    }
   },
 }));

@@ -3,18 +3,14 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MicrophoneIcon,
   CalendarDaysIcon,
   ClockIcon,
-  CheckCircleIcon,
-  XCircleIcon,
   ListBulletIcon,
-  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 
 import { RecordButton } from '@/components/recorder/RecordButton';
 import { ApprovalList } from '@/components/review/ApprovalList';
-import { HistoryList } from '@/components/history/HistoryList';
+import { UpcomingList } from '@/components/history/UpcomingList';
 import { TodayTasks } from '@/components/dashboard/TodayTasks';
 import { OnboardingModal } from '@/components/ui/OnboardingModal';
 import { useItemStore } from '@/stores/itemStore';
@@ -25,8 +21,6 @@ export default function Home() {
     fetchItems, 
     pendingItems, 
     activeItems, 
-    completedItems, 
-    rejectedItems,
     items 
   } = useItemStore();
   
@@ -45,7 +39,6 @@ export default function Home() {
     setOpenSection(prev => prev === sectionId ? null : sectionId);
   };
 
-  // محاسبه تعداد آیتم‌های Today
   const getTodayTasksCount = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -58,9 +51,7 @@ export default function Home() {
   };
 
   const todayTasksCount = getTodayTasksCount();
-  
-  // تعداد آیتم‌های History (همه‌ی آیتم‌ها به جز pending)
-  const historyCount = items.filter(i => i.status !== 'pending').length;
+  const upcomingCount = items.filter(i => i.status !== 'pending').length;
 
   const hasPending = pendingItems.length > 0;
 
@@ -142,7 +133,7 @@ export default function Home() {
           </AnimatePresence>
         </div>
 
-        {/* SECTION 2: Pending Approval (with blinking alert) */}
+        {/* SECTION 2: Pending Approval */}
         <div className={`bg-white rounded-2xl shadow-md border mb-4 overflow-hidden transition-colors ${
           hasPending ? 'border-yellow-400 ring-2 ring-yellow-300/50' : 'border-gray-200/60'
         }`}>
@@ -194,23 +185,23 @@ export default function Home() {
           </AnimatePresence>
         </div>
 
-        {/* SECTION 3: History */}
+        {/* SECTION 3: Upcoming (History renamed) */}
         <div className="bg-white rounded-2xl shadow-md border border-gray-200/60 mb-4 overflow-hidden">
           <button
-            onClick={() => toggleSection('history')}
+            onClick={() => toggleSection('upcoming')}
             className="w-full flex justify-between items-center p-4 hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center gap-2 text-gray-800">
               <ListBulletIcon className="w-6 h-6 text-purple-600" />
-              <h2 className="text-lg font-bold">History</h2>
-              {historyCount > 0 && (
+              <h2 className="text-lg font-bold">Upcoming</h2>
+              {upcomingCount > 0 && (
                 <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold leading-none text-white bg-purple-500 rounded-full">
-                  {historyCount}
+                  {upcomingCount}
                 </span>
               )}
             </div>
             <motion.span
-              animate={{ rotate: openSection === 'history' ? 180 : 0 }}
+              animate={{ rotate: openSection === 'upcoming' ? 180 : 0 }}
               transition={{ duration: 0.3 }}
               className="text-gray-500"
             >
@@ -218,7 +209,7 @@ export default function Home() {
             </motion.span>
           </button>
           <AnimatePresence>
-            {openSection === 'history' && (
+            {openSection === 'upcoming' && (
               <motion.div
                 variants={sectionVariants}
                 initial="hidden"
@@ -226,7 +217,7 @@ export default function Home() {
                 exit="hidden"
                 className="p-4 border-t border-gray-100"
               >
-                <HistoryList />
+                <UpcomingList />
               </motion.div>
             )}
           </AnimatePresence>
@@ -240,7 +231,6 @@ export default function Home() {
   );
 }
 
-// کامپوننت آیکون چپ‌راست
 function ChevronUpDownIcon({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>

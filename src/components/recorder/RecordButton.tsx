@@ -113,8 +113,8 @@ export const RecordButton = () => {
     return false;
   };
 
+  // ✅ نسخه‌ی ساده‌شده‌ی ذخیره‌سازی برای MVP
   const saveItem = async (itemData: any) => {
-    // ✅ برای MVP، همیشه وضعیت را 'pending' تنظیم می‌کنیم
     const status: 'pending' = 'pending';
     console.log('📤 ذخیره آیتم با وضعیت:', status);
 
@@ -125,13 +125,13 @@ export const RecordButton = () => {
       correctedTranscript: itemData.description || '',
       correctionStatus: 'none',
       confidence: itemData.confidence || 0.9,
-      category: itemData.category || 'idea',
+      category: 'idea', // ✅ همه با دسته‌ی 'idea' ذخیره می‌شوند
       title: itemData.title || 'Untitled',
       description: itemData.description || '',
-      priority: itemData.priority || 'medium',
+      priority: 'medium', // ✅ مقدار پیش‌فرض
       dueDate: itemData.dueDate || null,
-      nextAction: itemData.nextAction || null,
-      waitingFor: itemData.waitingFor || null,
+      nextAction: null,
+      waitingFor: null,
       status: status,
     });
   };
@@ -236,6 +236,7 @@ export const RecordButton = () => {
         return;
       }
 
+      // ذخیره‌ی همه‌ی آیتم‌ها (بدون Splitting Preview)
       for (const item of items) {
         await saveItem(item);
       }

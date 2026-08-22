@@ -70,6 +70,11 @@ export const ItemCard = ({ item }: { item: Item }) => {
   const [editDueDate, setEditDueDate] = useState<string>(item.dueDate ?? '');
   const [editNextAction, setEditNextAction] = useState<string>(item.nextAction ?? '');
   const [editWaitingFor, setEditWaitingFor] = useState<string>(item.waitingFor ?? '');
+  // ✅ موجودیت‌ها
+  const [editPerson, setEditPerson] = useState<string>(item.person ?? '');
+  const [editCompany, setEditCompany] = useState<string>(item.company ?? '');
+  const [editProject, setEditProject] = useState<string>(item.project ?? '');
+  const [editOwner, setEditOwner] = useState<string>(item.owner ?? '');
 
   const handleUpdateFollowUpStatus = async (status: FollowUpStatus) => {
     if (item.id) {
@@ -152,6 +157,10 @@ export const ItemCard = ({ item }: { item: Item }) => {
         dueDate: editDueDate || undefined,
         nextAction: editNextAction || undefined,
         waitingFor: editWaitingFor || undefined,
+        person: editPerson || undefined,
+        company: editCompany || undefined,
+        project: editProject || undefined,
+        owner: editOwner || undefined,
       });
       setIsEditing(false);
       alert('✅ Item updated and corrections saved to memory.');
@@ -183,14 +192,24 @@ export const ItemCard = ({ item }: { item: Item }) => {
           <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
 
           {item.nextAction && (
-            <div className="text-xs text-green-600 font-medium">
-              🎯 Next Action: {item.nextAction}
-            </div>
+            <div className="text-xs text-green-600 font-medium">🎯 Next Action: {item.nextAction}</div>
           )}
           {item.waitingFor && (
-            <div className="text-xs text-orange-600 font-medium">
-              ⏳ Waiting for: {item.waitingFor}
-            </div>
+            <div className="text-xs text-orange-600 font-medium">⏳ Waiting for: {item.waitingFor}</div>
+          )}
+
+          {/* ✅ موجودیت‌ها */}
+          {item.person && (
+            <div className="text-xs text-blue-600 font-medium">👤 Person: {item.person}</div>
+          )}
+          {item.company && (
+            <div className="text-xs text-purple-600 font-medium">🏢 Company: {item.company}</div>
+          )}
+          {item.project && (
+            <div className="text-xs text-indigo-600 font-medium">📁 Project: {item.project}</div>
+          )}
+          {item.owner && (
+            <div className="text-xs text-gray-600 font-medium">👤 Owner: {item.owner}</div>
           )}
 
           {item.rawTranscript && item.correctedTranscript && item.rawTranscript !== item.correctedTranscript && (
@@ -209,14 +228,9 @@ export const ItemCard = ({ item }: { item: Item }) => {
           )}
 
           {item.dueDate && (
-            <div className="text-xs text-gray-500">
-              📅 Due: {new Date(item.dueDate).toLocaleDateString('en-US')}
-            </div>
+            <div className="text-xs text-gray-500">📅 Due: {new Date(item.dueDate).toLocaleDateString('en-US')}</div>
           )}
 
-          {item.project && (
-            <div className="text-xs text-gray-500">📁 Project: {item.project}</div>
-          )}
           {item.tags && item.tags.length > 0 && (
             <div className="text-xs text-gray-500">🏷️ Tags: {item.tags.join(', ')}</div>
           )}
@@ -363,14 +377,42 @@ export const ItemCard = ({ item }: { item: Item }) => {
           value={editNextAction}
           onChange={(e) => setEditNextAction(e.target.value)}
           className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
-          placeholder="Next Action (e.g., 'Follow up with John')"
+          placeholder="Next Action"
         />
         <input
           type="text"
           value={editWaitingFor}
           onChange={(e) => setEditWaitingFor(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          placeholder="Waiting for"
+        />
+        <input
+          type="text"
+          value={editPerson}
+          onChange={(e) => setEditPerson(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          placeholder="Person (e.g., 'John')"
+        />
+        <input
+          type="text"
+          value={editCompany}
+          onChange={(e) => setEditCompany(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          placeholder="Company (e.g., 'Acme Corp')"
+        />
+        <input
+          type="text"
+          value={editProject}
+          onChange={(e) => setEditProject(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          placeholder="Project (e.g., 'Project X')"
+        />
+        <input
+          type="text"
+          value={editOwner}
+          onChange={(e) => setEditOwner(e.target.value)}
           className="w-full border border-gray-300 rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
-          placeholder="Waiting for (e.g., 'John', 'Client approval')"
+          placeholder="Owner (e.g., 'Me', 'Team')"
         />
         <div className="flex gap-3">
           <Button variant="primary" onClick={handleSaveEdit}>💾 Save</Button>

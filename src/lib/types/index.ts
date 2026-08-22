@@ -27,17 +27,21 @@ export interface Item {
   rawTranscript?: string;
   correctedTranscript?: string;
   
-  // ✅ فیلدهای عملیاتی
+  // فیلدهای عملیاتی
   nextAction?: string;
   waitingFor?: string;
   owner?: string;
   amount?: number;
   currency?: string;
   
+  // ✅ جدید: موجودیت‌های استخراج‌شده
+  person?: string;
+  company?: string;
+  project?: string;
+  
   followUpStatus?: FollowUpStatus;
   followUpDate?: string | null;
   followUpCondition?: string | null;
-  project?: string | null;
   tags?: string[];
 }
 

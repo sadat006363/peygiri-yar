@@ -23,12 +23,10 @@ export async function POST(req: NextRequest) {
     const content = response.choices[0]?.message?.content || '{}';
     const parsed = JSON.parse(content);
 
-    // پشتیبانی از خروجی آرایه‌ای (در پرامپت جدید) و همچنین خروجی تکی (برای سازگاری)
     let items: any[] = [];
     if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
       items = parsed.items;
     } else {
-      // اگر خروجی قدیمی یک شیء تکی باشد، آن را به آرایه تبدیل می‌کنیم
       items = [{
         category: parsed.category || 'idea',
         title: parsed.title || 'Untitled',
@@ -38,10 +36,14 @@ export async function POST(req: NextRequest) {
         nextAction: parsed.nextAction || null,
         waitingFor: parsed.waitingFor || null,
         confidence: parsed.confidence || 0.9,
+        // موجودیت‌ها
+        person: parsed.person || null,
+        company: parsed.company || null,
+        project: parsed.project || null,
+        owner: parsed.owner || null,
       }];
     }
 
-    // اطمینان از اینکه هر آیتم فیلدهای مورد نیاز را دارد
     const sanitizedItems = items.map((item: any) => ({
       category: item.category || 'idea',
       title: item.title || 'Untitled',
@@ -51,6 +53,10 @@ export async function POST(req: NextRequest) {
       nextAction: item.nextAction || null,
       waitingFor: item.waitingFor || null,
       confidence: item.confidence !== undefined ? item.confidence : 0.9,
+      person: item.person || null,
+      company: item.company || null,
+      project: item.project || null,
+      owner: item.owner || null,
     }));
 
     return NextResponse.json({ items: sanitizedItems });

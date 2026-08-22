@@ -116,6 +116,36 @@ export const RecordButton = () => {
     return false;
   };
 
+  const saveItem = async (itemData: any) => {
+    const confidence = itemData.confidence || 0.9;
+    let status: 'pending' | 'needs_review' = 'pending';
+    if (confidence < 0.85) {
+      status = 'needs_review';
+      console.log(`⚠️ اطمینان پایین (${Math.round(confidence * 100)}%) → ارسال به Needs Review`);
+    }
+
+    await addItem({
+      rawText: itemData.description || '',
+      correctedText: itemData.description || '',
+      rawTranscript: itemData.description || '',
+      correctedTranscript: itemData.description || '',
+      correctionStatus: 'none',
+      confidence: confidence,
+      category: itemData.category || 'idea',
+      title: itemData.title || 'Untitled',
+      description: itemData.description || '',
+      priority: itemData.priority || 'medium',
+      dueDate: itemData.dueDate || null,
+      nextAction: itemData.nextAction || null,
+      waitingFor: itemData.waitingFor || null,
+      person: itemData.person || null,
+      company: itemData.company || null,
+      project: itemData.project || null,
+      owner: itemData.owner || null,
+      status: status,
+    });
+  };
+
   const handleSend = async () => {
     console.log('📤 handleSend فراخوانی شد.');
 
@@ -223,14 +253,12 @@ export const RecordButton = () => {
         setShowSplitPreview(true);
         setIsProcessing(false);
         isProcessingRef.current = false;
-        // پردازش را متوقف می‌کنیم تا کاربر انتخاب کند
         resetAudio();
         return;
       }
 
-      // اگر فقط یک آیتم باشد، مستقیماً ذخیره کن (با منطق قبلی)
+      // اگر فقط یک آیتم باشد، مستقیماً ذخیره کن
       await saveItem(items[0]);
-
       console.log(`✅ آیتم با موفقیت ذخیره شد.`);
       resetAudio();
 
@@ -245,34 +273,6 @@ export const RecordButton = () => {
     }
   };
 
-  // تابع ذخیره‌سازی یک آیتم (با منطق قبلی)
-  const saveItem = async (itemData: any) => {
-    const confidence = itemData.confidence || 0.9;
-    let status: 'pending' | 'needs_review' = 'pending';
-    if (confidence < 0.85) {
-      status = 'needs_review';
-      console.log(`⚠️ اطمینان پایین (${Math.round(confidence * 100)}%) → ارسال به Needs Review`);
-    }
-
-    await addItem({
-      rawText: itemData.description || '',
-      correctedText: itemData.description || '',
-      rawTranscript: itemData.description || '',
-      correctedTranscript: itemData.description || '',
-      correctionStatus: 'none',
-      confidence: confidence,
-      category: itemData.category || 'idea',
-      title: itemData.title || 'Untitled',
-      description: itemData.description || '',
-      priority: itemData.priority || 'medium',
-      dueDate: itemData.dueDate || null,
-      nextAction: itemData.nextAction || null,
-      waitingFor: itemData.waitingFor || null,
-      status: status,
-    });
-  };
-
-  // توابع مربوط به SplitPreview
   const handleSplitConfirm = async (confirmedItems: any[]) => {
     setShowSplitPreview(false);
     setIsProcessing(true);
@@ -343,7 +343,6 @@ export const RecordButton = () => {
         </div>
       )}
 
-      {/* SplitPreview Modal */}
       {splitItems && (
         <SplitPreview
           isOpen={showSplitPreview}

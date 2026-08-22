@@ -71,7 +71,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
   const [editNextAction, setEditNextAction] = useState<string>(item.nextAction ?? '');
   const [editWaitingFor, setEditWaitingFor] = useState<string>(item.waitingFor ?? '');
 
-  // موجودیت‌ها (غیرفعال برای MVP)
+  // موجودیت‌ها (غیرفعال برای MVP - کامنت شده)
   // const [editPerson, setEditPerson] = useState<string>(item.person ?? '');
   // const [editCompany, setEditCompany] = useState<string>(item.company ?? '');
   // const [editProject, setEditProject] = useState<string>(item.project ?? '');
@@ -122,37 +122,62 @@ export const ItemCard = ({ item }: { item: Item }) => {
     }
   };
 
-  // حافظه‌ی اصلاحات (غیرفعال برای MVP)
   const saveToCorrectionMemory = async (original: string, corrected: string) => {
-    // const FEATURE_ENABLED = false;
-    // if (!FEATURE_ENABLED) return;
-    // ... (کد اصلی)
-    return;
+    if (original.trim() === corrected.trim()) return;
+    try {
+      const res = await fetch('/api/correction-memory/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          original: original.trim(),
+          corrected: corrected.trim(),
+        }),
+      });
+      if (res.ok) {
+        console.log('✅ اصلاحات در حافظه ذخیره شد.');
+      } else {
+        console.warn('⚠️ خطا در ذخیره اصلاحات در حافظه.');
+      }
+    } catch (error) {
+      console.warn('⚠️ خطا در ذخیره اصلاحات:', error);
+    }
   };
 
   const handleSaveEdit = async () => {
+    console.log('💾 ذخیره ویرایش برای آیتم:', item.id);
     if (item.id) {
-      if (item.description !== editDesc) {
-        await saveToCorrectionMemory(item.description, editDesc);
+      try {
+        if (item.description !== editDesc) {
+          await saveToCorrectionMemory(item.description, editDesc);
+        }
+        if (item.title !== editTitle) {
+          await saveToCorrectionMemory(item.title, editTitle);
+        }
+
+        await updateItem(item.id, {
+          title: editTitle,
+          description: editDesc,
+          priority: editPriority,
+          dueDate: editDueDate || undefined,
+          nextAction: editNextAction || undefined,
+          waitingFor: editWaitingFor || undefined,
+          // موجودیت‌ها (غیرفعال)
+          // person: editPerson || undefined,
+          // company: editCompany || undefined,
+          // project: editProject || undefined,
+          // owner: editOwner || undefined,
+        });
+
+        console.log('✅ ویرایش با موفقیت ذخیره شد.');
+        setIsEditing(false);
+        alert('✅ Item updated successfully!');
+      } catch (error) {
+        console.error('❌ خطا در ذخیره ویرایش:', error);
+        alert('❌ Error updating item. Please try again.');
       }
-      if (item.title !== editTitle) {
-        await saveToCorrectionMemory(item.title, editTitle);
-      }
-      await updateItem(item.id, {
-        title: editTitle,
-        description: editDesc,
-        priority: editPriority,
-        dueDate: editDueDate || undefined,
-        nextAction: editNextAction || undefined,
-        waitingFor: editWaitingFor || undefined,
-        // موجودیت‌ها (غیرفعال)
-        // person: editPerson || undefined,
-        // company: editCompany || undefined,
-        // project: editProject || undefined,
-        // owner: editOwner || undefined,
-      });
-      setIsEditing(false);
-      alert('✅ Item updated and corrections saved to memory.');
+    } else {
+      console.warn('⚠️ آیتم ID ندارد!');
+      alert('❌ Item ID is missing. Cannot update.');
     }
   };
 
@@ -366,7 +391,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
           type="text"
           value={editWaitingFor}
           onChange={(e) => setEditWaitingFor(e.target.value)}
-          className="w-full border border-gray-300 rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+          className="w-full border border-gray-300 rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
           placeholder="Waiting for"
         />
         {/* موجودیت‌ها (غیرفعال برای MVP) */}

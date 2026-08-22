@@ -6,10 +6,9 @@ import { ApprovalList } from '@/components/review/ApprovalList';
 // import { ReviewQueue } from '@/components/review/ReviewQueue'; // غیرفعال برای MVP
 import { HistoryList } from '@/components/history/HistoryList';
 import { TodayTasks } from '@/components/dashboard/TodayTasks';
-import { UnscheduledTasks } from '@/components/dashboard/UnscheduledTasks';
+// import { UnscheduledTasks } from '@/components/dashboard/UnscheduledTasks'; // غیرفعال برای MVP
 // import { DashboardSummary } from '@/components/dashboard/DashboardSummary'; // غیرفعال برای MVP
 import { OnboardingModal } from '@/components/ui/OnboardingModal';
-// import { HelpTooltip } from '@/components/ui/HelpTooltip'; // حذف شد
 import { useItemStore } from '@/stores/itemStore';
 import { Card } from '@/components/ui/Card';
 
@@ -65,28 +64,6 @@ export default function Home() {
           <div className="w-24 h-1 bg-gradient-to-r from-indigo-400 to-purple-400 mx-auto mt-3 rounded-full"></div>
         </header>
 
-        {/* ===== SECTION: Dashboard Summary (غیرفعال برای MVP) ===== */}
-        {/*
-        <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
-          <button
-            onClick={() => toggleSection('summary')}
-            className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-gray-800">📊 Dashboard Summary</h2>
-            </div>
-            <span className="text-gray-500 text-xl">
-              {openSection === 'summary' ? '▲' : '▼'}
-            </span>
-          </button>
-          {openSection === 'summary' && (
-            <div className="p-4 bg-white">
-              <DashboardSummary />
-            </div>
-          )}
-        </div>
-        */}
-
         <Card className="mb-8 bg-white/80 backdrop-blur-sm border border-white/50 shadow-xl">
           <div className="py-4">
             <RecordButton />
@@ -111,7 +88,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* SECTION 2: Unscheduled */}
+        {/* ===== SECTION: Unscheduled (غیرفعال برای MVP) ===== */}
+        {/*
         <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden bg-white shadow-sm">
           <button
             onClick={() => toggleSection('unscheduled')}
@@ -128,6 +106,7 @@ export default function Home() {
             </div>
           )}
         </div>
+        */}
 
         {/* ===== SECTION: Needs Review (غیرفعال برای MVP) ===== */}
         {/*

@@ -14,12 +14,13 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 
-// ✅ تابع کمکی برای نمایش تاریخ به‌صورت خوانا
+// ✅ تابع کمکی برای نمایش تاریخ به‌صورت خوانا (DD MMM YYYY)
 const formatDate = (date: string | undefined) => {
   if (!date) return '';
   try {
     const d = new Date(date);
-    // فرمت: "23 Aug 2026"
+    // بررسی اینکه تاریخ معتبر باشد
+    if (isNaN(d.getTime())) return date;
     return d.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: 'short',
@@ -67,6 +68,9 @@ export const ItemCard = ({ item }: { item: Item }) => {
     }
   };
 
+  // ✅ فرمت تاریخ برای نمایش در UI
+  const displayDate = formatDate(item.dueDate);
+
   return (
     <>
       <motion.div
@@ -90,7 +94,7 @@ export const ItemCard = ({ item }: { item: Item }) => {
               </span>
               {item.dueDate && (
                 <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-purple-100 text-purple-700">
-                  📅 {formatDate(item.dueDate)}
+                  📅 {displayDate}
                 </span>
               )}
             </div>

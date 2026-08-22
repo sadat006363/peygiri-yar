@@ -6,6 +6,21 @@ import { Item } from '@/lib/types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 
+// ✅ تابع کمکی برای نمایش تاریخ به‌صورت خوانا
+const formatDate = (date: string) => {
+  if (!date) return '';
+  try {
+    const d = new Date(date);
+    return d.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return date;
+  }
+};
+
 export const TodayTasks = () => {
   const { activeItems, fetchItems, isLoading, deleteItem } = useItemStore();
   const [todayItems, setTodayItems] = useState<Item[]>([]);
@@ -20,20 +35,12 @@ export const TodayTasks = () => {
       return;
     }
 
-    // ✅ دریافت تاریخ امروز به‌صورت رشته (YYYY-MM-DD)
     const todayStr = new Date().toISOString().split('T')[0];
     console.log('📅 تاریخ امروز (رشته):', todayStr);
 
-    // ✅ فیلتر کردن آیتم‌هایی که dueDate برابر با todayStr است
     const todayList = activeItems.filter(i => {
-      if (!i.dueDate) {
-        console.log('⚠️ آیتم بدون dueDate:', i.title);
-        return false;
-      }
-      // مقایسه‌ی رشته‌ها (YYYY-MM-DD)
-      const isToday = i.dueDate === todayStr;
-      console.log(`📅 ${i.title}: dueDate=${i.dueDate}, isToday=${isToday}`);
-      return isToday;
+      if (!i.dueDate) return false;
+      return i.dueDate === todayStr;
     });
 
     console.log(`📊 تعداد آیتم‌های امروز: ${todayList.length}`);
@@ -66,7 +73,7 @@ export const TodayTasks = () => {
               <h4 className="font-bold text-gray-800">{item.title}</h4>
               <p className="text-sm text-gray-600">{item.description}</p>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-gray-400">📅 {item.dueDate}</span>
+                <span className="text-xs text-gray-400">📅 {formatDate(item.dueDate!)}</span>
               </div>
             </div>
             <Button

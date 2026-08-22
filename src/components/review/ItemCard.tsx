@@ -14,6 +14,22 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 
+// ✅ تابع کمکی برای نمایش تاریخ به‌صورت خوانا
+const formatDate = (date: string | undefined) => {
+  if (!date) return '';
+  try {
+    const d = new Date(date);
+    // فرمت: "23 Aug 2026"
+    return d.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return date;
+  }
+};
+
 export const ItemCard = ({ item }: { item: Item }) => {
   const { updateItem, deleteItem } = useItemStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -48,21 +64,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
       });
       setIsEditing(false);
       alert('✅ Item updated successfully!');
-    }
-  };
-
-  // نمایش تاریخ به‌صورت خوانا
-  const formatDate = (date: string) => {
-    if (!date) return '';
-    try {
-      return new Date(date).toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return date;
     }
   };
 
@@ -103,7 +104,6 @@ export const ItemCard = ({ item }: { item: Item }) => {
               </span>
             </div>
 
-            {/* دکمه‌ها بر اساس وضعیت */}
             {item.status === 'pending' && (
               <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100">
                 <Button variant="success" size="sm" onClick={handleApprove}>

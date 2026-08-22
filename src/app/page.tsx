@@ -9,7 +9,7 @@ import { TodayTasks } from '@/components/dashboard/TodayTasks';
 import { UnscheduledTasks } from '@/components/dashboard/UnscheduledTasks';
 // import { DashboardSummary } from '@/components/dashboard/DashboardSummary'; // غیرفعال برای MVP
 import { OnboardingModal } from '@/components/ui/OnboardingModal';
-import { HelpTooltip } from '@/components/ui/HelpTooltip';
+// import { HelpTooltip } from '@/components/ui/HelpTooltip'; // حذف شد
 import { useItemStore } from '@/stores/itemStore';
 import { Card } from '@/components/ui/Card';
 
@@ -17,6 +17,7 @@ export default function Home() {
   const { fetchItems } = useItemStore();
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -24,6 +25,7 @@ export default function Home() {
     if (hasSeen) {
       setOnboardingComplete(true);
     }
+    setIsMounted(true);
   }, []);
 
   const toggleSection = (sectionId: string) => {
@@ -33,6 +35,20 @@ export default function Home() {
       setOpenSection(sectionId);
     }
   };
+
+  // جلوگیری از رندر سمت سرور برای کامپوننت‌های تعاملی
+  if (!isMounted) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <div className="text-center py-8">
+            <h1 className="text-4xl font-extrabold tracking-tight">🎯 Peygiri Yar</h1>
+            <p className="text-gray-500 mt-2 text-lg">Loading...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -56,7 +72,6 @@ export default function Home() {
           >
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-gray-800">📊 Dashboard Summary</h2>
-              <HelpTooltip>...</HelpTooltip>
             </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'summary' ? '▲' : '▼'}
@@ -82,10 +97,7 @@ export default function Home() {
             onClick={() => toggleSection('today')}
             className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
           >
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-gray-800">📅 Today's Tasks</h2>
-              <HelpTooltip>...</HelpTooltip>
-            </div>
+            <h2 className="text-lg font-bold text-gray-800">📅 Today's Tasks</h2>
             <span className="text-gray-500 text-xl">
               {openSection === 'today' ? '▲' : '▼'}
             </span>
@@ -103,10 +115,7 @@ export default function Home() {
             onClick={() => toggleSection('unscheduled')}
             className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
           >
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-gray-800">📌 Unscheduled</h2>
-              <HelpTooltip>...</HelpTooltip>
-            </div>
+            <h2 className="text-lg font-bold text-gray-800">📌 Unscheduled</h2>
             <span className="text-gray-500 text-xl">
               {openSection === 'unscheduled' ? '▲' : '▼'}
             </span>
@@ -127,7 +136,6 @@ export default function Home() {
           >
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-gray-800">🔍 Needs Review</h2>
-              <HelpTooltip>...</HelpTooltip>
             </div>
             <span className="text-gray-500 text-xl">
               {openSection === 'review' ? '▲' : '▼'}
@@ -147,10 +155,7 @@ export default function Home() {
             onClick={() => toggleSection('pending')}
             className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
           >
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-gray-800">⏳ Pending Approval</h2>
-              <HelpTooltip>...</HelpTooltip>
-            </div>
+            <h2 className="text-lg font-bold text-gray-800">⏳ Pending Approval</h2>
             <span className="text-gray-500 text-xl">
               {openSection === 'pending' ? '▲' : '▼'}
             </span>
@@ -168,10 +173,7 @@ export default function Home() {
             onClick={() => toggleSection('history')}
             className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
           >
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-gray-800">📜 History</h2>
-              <HelpTooltip>...</HelpTooltip>
-            </div>
+            <h2 className="text-lg font-bold text-gray-800">📜 History</h2>
             <span className="text-gray-500 text-xl">
               {openSection === 'history' ? '▲' : '▼'}
             </span>
